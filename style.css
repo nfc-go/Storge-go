@@ -1,10 +1,10 @@
 /* ==========================================================================
-   NebulaDrive Core Application Stylesheet
+   NebulaDrive Core Application Stylesheet - COMPLETE ENTERPRISE PRODUCTION
    Architecture: Zero-Shortcut Grid/Flex Framework & Bidirectional Matrix
-   Features: Universal Desktop & Mobile-First Responsive, Light/Dark Engine
+   Features: Universal Desktop & Mobile-First (Portrait/Landscape), Dynamic Themes
    ========================================================================== */
 
-/* --- Custom Property Configuration Layer (Dark Mode - Default) --- */
+/* --- الوضع الداكن الافتراضي (Dark Mode - Default) --- */
 :root {
     --bg-primary: #0f111a;
     --bg-secondary: #161925;
@@ -23,7 +23,7 @@
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- Light Mode Color Overrides --- */
+/* --- الوضع الفاتح الكامل (Light Mode Override) --- */
 [data-theme="light"] {
     --bg-primary: #f4f6f9;
     --bg-secondary: #ffffff;
@@ -176,7 +176,7 @@ html[dir="rtl"] .nav-link.active {
     border-right: 4px solid var(--accent-color);
 }
 
-/* --- Quota Widget Subsystem --- */
+/* --- Quota Widget Subsystem (Desktop) --- */
 .sidebar-footer-quota {
     background-color: var(--bg-tertiary);
     padding: 16px;
@@ -312,7 +312,31 @@ html[dir="rtl"] .toolbar-search-wrapper input {
     cursor: pointer;
 }
 
-/* --- Theme & Language Toggle Mechanism --- */
+/* --- Grid vs List Layout Buttons --- */
+.layout-toggle-group {
+    display: flex;
+    background-color: var(--bg-tertiary);
+    padding: 4px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.layout-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.layout-btn.active, .layout-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+}
+
+/* --- Theme & Language Toggles --- */
 .theme-toggle-btn, .lang-btn {
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
@@ -325,7 +349,6 @@ html[dir="rtl"] .toolbar-search-wrapper input {
     gap: 8px;
     font-weight: 500;
 }
-
 .theme-toggle-btn:hover, .lang-btn:hover {
     border-color: var(--accent-color);
 }
@@ -361,6 +384,11 @@ html[dir="rtl"] .profile-badge {
     font-weight: 600;
 }
 
+/* شريط مساحة الموبايل المدمج - مخفي بالكمبيوتر تلقائياً */
+.mobile-quota-container {
+    display: none;
+}
+
 /* --- File Explorer Grid Layouts --- */
 .explorer-viewport {
     flex-grow: 1;
@@ -378,6 +406,10 @@ html[dir="rtl"] .profile-badge {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
+.explorer-grid.view-mode-list {
+    grid-template-columns: 1fr;
+}
+
 /* --- Polymorphic Card Nodes --- */
 .file-card-node {
     background-color: var(--bg-secondary);
@@ -386,14 +418,86 @@ html[dir="rtl"] .profile-badge {
     padding: 20px;
     display: flex;
     transition: var(--transition-smooth);
+    position: relative;
+    cursor: pointer;
+}
+
+.explorer-grid.view-mode-grid .file-card-node {
     flex-direction: column;
-    height: 160px;
+    height: 170px;
+    justify-content: space-between;
+}
+
+.explorer-grid.view-mode-list .file-card-node {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: auto;
+    padding: 14px 24px;
 }
 
 .file-card-node:hover {
     border-color: var(--accent-color);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* مكونات الكارت الداخلية */
+.file-node-icon {
+    font-size: 2.2rem;
+    color: var(--accent-color);
+}
+.explorer-grid.view-mode-list .file-node-icon {
+    font-size: 1.5rem;
+}
+
+.file-node-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+    flex-grow: 1;
+}
+.explorer-grid.view-mode-grid .file-node-info {
+    margin-top: 12px;
+}
+.explorer-grid.view-mode-list .file-node-info {
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+.file-node-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-node-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.file-node-actions {
+    display: flex;
+    gap: 8px;
+}
+.file-action-trigger {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: var(--transition-smooth);
+}
+.file-action-trigger:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+.file-action-trigger.delete-trigger:hover {
+    color: var(--danger-color);
 }
 
 /* --- Empty System Placeholders --- */
@@ -407,6 +511,19 @@ html[dir="rtl"] .profile-badge {
     font-size: 4rem;
     color: var(--border-color);
     margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    max-width: 400px;
+    margin: 0 auto;
+    font-size: 0.95rem;
 }
 
 /* --- Gatekeeper Auth Overlay Panels --- */
@@ -430,7 +547,96 @@ html[dir="rtl"] .profile-badge {
     width: 440px;
     border-radius: var(--border-radius-lg);
     padding: 40px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-logo {
+    font-size: 3rem;
+    color: var(--accent-color);
+    margin-bottom: 14px;
+}
+
+.auth-header h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.auth-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* --- Diagnostic Banner Alerts --- */
+.error-banner {
+    background-color: rgba(237, 66, 69, 0.1);
+    border: 1px solid var(--danger-color);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+/* --- Form Groups & Key Inputs --- */
+.form-group {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input-icon-wrapper {
+    position: relative;
+}
+
+.field-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+html[dir="rtl"] .field-icon {
+    left: auto;
+    right: 14px;
+}
+
+.input-icon-wrapper input {
+    width: 100%;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 12px 14px 12px 42px;
+    color: var(--text-primary);
+    border-radius: var(--border-radius-sm);
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+html[dir="rtl"] .input-icon-wrapper input {
+    padding: 12px 42px 12px 14px;
+}
+
+.input-icon-wrapper input:focus {
+    border-color: var(--accent-color);
 }
 
 /* --- Master PIN Row Matrix --- */
@@ -457,6 +663,29 @@ html[dir="rtl"] .profile-badge {
 
 .pin-box:focus {
     border-color: var(--accent-color);
+    box-shadow: 0 0 12px rgba(88, 101, 242, 0.3);
+}
+
+.auth-btn {
+    width: 100%;
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition-smooth);
+    margin-top: 8px;
+}
+
+.auth-btn:hover {
+    background-color: var(--accent-hover);
 }
 
 /* --- Modals Engine Pipeline Layers --- */
@@ -480,11 +709,11 @@ html[dir="rtl"] .profile-badge {
     display: flex;
     flex-direction: column;
     max-height: 85vh;
-    width: 480px;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
     overflow: hidden;
 }
 
+.modal-card.width-medium { width: 480px; }
 .modal-card.width-large { width: 800px; }
 
 .modal-card-header {
@@ -495,38 +724,198 @@ html[dir="rtl"] .profile-badge {
     justify-content: space-between;
 }
 
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.modal-close-trigger-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.modal-close-trigger-btn:hover {
+    color: var(--text-primary);
+}
+
 .modal-card-body {
     padding: 32px;
     overflow-y: auto;
 }
 
-/* --- Media Viewport Displays --- */
+.modal-card-footer {
+    padding: 20px 32px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    background-color: var(--bg-tertiary);
+    align-items: center;
+}
+
+/* --- Interface Buttons Matrix --- */
+.btn-primary {
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+}
+.btn-primary:hover { background-color: var(--accent-hover); }
+
+.btn-secondary {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 12px 24px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+.btn-secondary:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+/* --- Media Viewport Displays Configuration --- */
 .media-viewport-surface {
     background-color: #050508;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 360px;
+    padding: 0 !important;
 }
 
-.viewport-block img, .viewport-block video {
+.viewport-block {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewport-block img {
     max-width: 100%;
     max-height: 60vh;
     object-fit: contain;
 }
 
+.viewport-block video {
+    width: 100%;
+    max-height: 60vh;
+}
+
+.audio-player-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 40px;
+}
+
+.audio-icon {
+    font-size: 4rem;
+    color: var(--accent-color);
+}
+
+.viewport-block pre {
+    width: 100%;
+    padding: 32px;
+    color: #57f287;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.95rem;
+    overflow: auto;
+    max-height: 60vh;
+    text-align: left;
+    white-space: pre-wrap;
+}
+
+.file-meta-info {
+    margin-right: auto;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+html[dir="rtl"] .file-meta-info {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+/* --- Premium Tier Billing UI --- */
+.premium-benefits-card {
+    background-color: var(--bg-tertiary);
+    border: 1px solid #f1c40f;
+    border-radius: var(--border-radius-md);
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.premium-benefits-card h4 {
+    color: #f1c40f;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.premium-benefits-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.premium-benefits-card li {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.premium-benefits-card li i {
+    color: var(--success-color);
+}
+
+.pricing-badge {
+    font-weight: 800;
+}
+
+.pricing-badge .price {
+    font-size: 1.6rem;
+    color: var(--text-primary);
+}
+
+.pricing-badge .period {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.form-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
 /* ==========================================================================
-   Mobile-First Optimizations (Responsive Liquid Layout)
+   Mobile-First Optimizations (Responsive Layout Engine Layer)
    ========================================================================== */
 
 @media (max-width: 768px) {
     .app-layout {
         flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
     }
 
-    /* تحويل القائمة الجانبية لشريط تنقل سفلي */
+    /* تحويل القائمة الجانبية لشريط تنقل سفلي احترافي */
     .sidebar {
         width: 100%;
         height: 75px;
@@ -542,8 +931,10 @@ html[dir="rtl"] .profile-badge {
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
     }
 
-    .sidebar-branding, .sidebar-footer-quota {
-        display: none !important; /* إخفاء الأجزاء الكبيرة من الأسفل */
+    /* إخفاء البراند والمساحة التخزينية الكبيرة لتوفير مكان بالشاشة */
+    .sidebar-branding, 
+    .sidebar-footer-quota {
+        display: none !important;
     }
 
     .sidebar-nav {
@@ -551,6 +942,7 @@ html[dir="rtl"] .profile-badge {
         width: 100%;
         justify-content: space-around;
         align-items: center;
+        gap: 0;
     }
 
     .nav-link {
@@ -564,7 +956,11 @@ html[dir="rtl"] .profile-badge {
         border-right: none !important;
     }
 
-    /* زر الرفع العائم الذكي فوق المنيو السفلي */
+    .nav-link.active i {
+        color: var(--accent-color);
+    }
+
+    /* زر الرفع العائم الذكي للموبايل لسهولة الاستخدام */
     .sidebar-action-wrapper {
         position: fixed;
         bottom: 90px;
@@ -586,10 +982,15 @@ html[dir="rtl"] .profile-badge {
         box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
     }
 
-    #txt-upload-btn { display: none; }
-    .upload-btn i { font-size: 1.3rem; }
+    #txt-upload-btn {
+        display: none;
+    }
+    
+    .upload-btn i {
+        font-size: 1.3rem;
+    }
 
-    /* تعديل الهيدر العلوي ليحتوي على كشاف المساحة المدمج */
+    /* إعادة ضبط الهيدر والمحتوى ومساحة العرض للموبايل */
     .main-content {
         padding-bottom: 75px;
         height: calc(100vh - 75px);
@@ -613,33 +1014,40 @@ html[dir="rtl"] .profile-badge {
         gap: 8px;
     }
 
-    /* نظام عرض شريط المساحة المصغر (Quota Mobile) في الهيدر */
+    /* نظام عرض شريط المساحة المصغر (Quota Mobile) للموبايل طولي/عرضي */
     .mobile-quota-container {
         display: flex !important;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         background-color: var(--bg-tertiary);
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 0.75rem;
         border: 1px solid var(--border-color);
-        flex-grow: 1;
-        max-width: 160px;
+        min-width: 110px;
+        max-width: 140px;
+        flex-shrink: 0;
     }
 
     .mobile-quota-bar {
         flex-grow: 1;
-        height: 4px;
+        height: 5px;
         background-color: var(--bg-primary);
         border-radius: 2px;
         overflow: hidden;
+        position: relative;
+        width: 50px;
     }
 
-    /* إخفاء العناصر الفرعية لعدم زحام الشاشة */
-    .profile-badge .profile-name { display: none; }
-    .profile-badge { padding: 6px; }
+    .profile-badge .profile-name {
+        display: none;
+    }
 
-    /* تحسين مساحة عرض الملفات لعدم الخروج عن الشاشة */
+    .profile-badge {
+        padding: 6px;
+    }
+
+    /* تحسين عرض كروت الملفات على الموبايل */
     .explorer-viewport {
         padding: 12px;
     }
@@ -654,7 +1062,7 @@ html[dir="rtl"] .profile-badge {
         height: 130px;
     }
 
-    /* ضبط الشاشات المنبثقة للـ PIN لتناسب حجم اليد */
+    /* واجهات الـ PIN المنبثقة على شاشات اللمس */
     .auth-card {
         width: 92%;
         padding: 24px 16px;
@@ -669,5 +1077,9 @@ html[dir="rtl"] .profile-badge {
     .modal-card {
         width: 95% !important;
         max-height: 85vh;
+    }
+
+    .media-viewport-surface {
+        min-height: 260px;
     }
 }
