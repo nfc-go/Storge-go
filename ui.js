@@ -192,7 +192,7 @@ class DashboardUI {
         return card;
     }
 
-    refreshQuota() {
+        refreshQuota() {
         if (typeof globalStorageEngine === "undefined") return;
         const state = globalStorageEngine._state;
         const totalBytes = (state.tier === "Pro") ? 500 * 1024 * 1024 : 5 * 1024 * 1024;
@@ -209,8 +209,10 @@ class DashboardUI {
             this.quotaFillBar.style.backgroundColor = pct > 85 ? "#ed4245" : "#5865f2";
         }
         if (state.tier === "Pro" && this.btnUpgradeStorage) this.btnUpgradeStorage.style.display = "none";
-    }
-}
 
-const globalDashboardUI = new DashboardUI();
-document.addEventListener("DOMContentLoaded", () => globalDashboardUI.initialize());
+        // ======= السطرين بتوع الموبايل اللي ضفناهم هنا في آخر الدالة =======
+        const mobileFill = document.getElementById("quota-progress-fill-mobile");
+        const mobileTxt = document.getElementById("quota-used-text-mobile");
+        if (mobileFill) mobileFill.style.width = `${Math.min(pct, 100)}%`;
+        if (mobileTxt) mobileTxt.textContent = Math.round(pct) + "%";
+    }
