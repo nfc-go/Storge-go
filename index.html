@@ -2,282 +2,208 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NebulaDrive - Secure Client-Side Sandbox Storage</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NebulaDrive - Secure Decoupled Storage Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="app-container" class="app-layout blurred">
+    <div class="app-layout" id="application-viewport-shell">
         
-        <aside id="sidebar-container" class="sidebar">
+        <aside class="sidebar">
             <div class="sidebar-branding">
-                <i class="fa-solid fa-user-shield branding-icon"></i>
-                <span id="txt-brand-name" class="branding-text">NebulaDrive</span>
+                <i class="fa-solid fa-user-astronaut branding-icon"></i>
+                <span class="branding-text">NebulaDrive</span>
             </div>
-
+            
             <div class="sidebar-action-wrapper">
-                <label for="sidebar-file-input" id="lbl-upload-btn" class="upload-btn">
+                <label for="binary-file-injector" class="upload-btn">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span id="txt-upload-btn">Upload New</span>
+                    <span id="txt-upload-btn">Upload File</span>
                 </label>
-                <input type="file" id="sidebar-file-input" multiple class="hidden-input" />
+                <input type="file" id="binary-file-injector" class="hidden-input" multiple>
             </div>
-
-            <nav id="sidebar-navigation" class="sidebar-nav">
-                <a href="#" class="nav-link active" data-filter="all" id="nav-filter-all">
+            
+            <nav class="sidebar-nav">
+                <a href="#all" class="nav-link active" id="nav-all-trigger">
                     <i class="fa-solid fa-folder-open"></i>
                     <span id="txt-nav-all">All Files</span>
                 </a>
-                <a href="#" class="nav-link" data-filter="photos" id="nav-filter-photos">
+                <a href="#images" class="nav-link" id="nav-images-trigger">
                     <i class="fa-solid fa-image"></i>
-                    <span id="txt-nav-photos">Photos</span>
+                    <span id="txt-nav-images">Images</span>
                 </a>
-                <a href="#" class="nav-link" data-filter="documents" id="nav-filter-documents">
+                <a href="#videos" class="nav-link" id="nav-videos-trigger">
+                    <i class="fa-solid fa-video"></i>
+                    <span id="txt-nav-videos">Videos</span>
+                </a>
+                <a href="#documents" class="nav-link" id="nav-documents-trigger">
                     <i class="fa-solid fa-file-lines"></i>
                     <span id="txt-nav-docs">Documents</span>
                 </a>
-                <a href="#" class="nav-link" data-filter="favorites" id="nav-filter-favorites">
-                    <i class="fa-solid fa-star"></i>
-                    <span id="txt-nav-favorites">Favorites</span>
-                </a>
-                <a href="#" class="nav-link" data-filter="trash" id="nav-filter-trash">
-                    <i class="fa-solid fa-trash-can"></i>
-                    <span id="txt-nav-trash">Trash</span>
-                </a>
             </nav>
-
-            <div class="sidebar-footer-quota">
+            
+            <div class="sidebar-footer-quota" id="desktop-quota-block">
                 <div class="quota-header">
                     <i class="fa-solid fa-database"></i>
-                    <span id="txt-quota-title">Storage Space</span>
+                    <span id="txt-quota-title">Storage Consumption</span>
                 </div>
-                <div id="sidebar-storage-progress" class="quota-progress-bar">
-                    <div id="quota-progress-fill" class="quota-fill" style="width: 0%;"></div>
+                <div class="quota-progress-bar">
+                    <div class="quota-fill" id="quota-progress-fill"></div>
                 </div>
-                <div id="sidebar-storage-metrics" class="quota-metrics">
-                    <span id="quota-used-text">0 B</span>
-                    <span id="quota-total-text">of 5 MB used</span>
+                <div class="quota-metrics">
+                    <span id="quota-used-text">0 KB</span>
+                    <span id="quota-total-text">of 5 MB</span>
                 </div>
-                <button type="button" id="sidebar-upgrade-btn" class="upgrade-btn">
-                    <i class="fa-solid fa-bolt"></i>
-                    <span id="txt-upgrade-btn">Upgrade Storage</span>
+                <button type="button" class="upgrade-btn" id="upgrade-tier-trigger" style="margin-top: 12px;">
+                    <i class="fa-solid fa-gem"></i>
+                    <span id="txt-upgrade-btn">Go Premium</span>
                 </button>
             </div>
         </aside>
 
-        <main id="main-dashboard-content" class="main-content">
+        <main class="main-content">
             
-            <header id="dashboard-toolbar" class="toolbar">
+            <header class="toolbar">
                 <div class="toolbar-search-wrapper">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="dashboard-search" placeholder="Search secure files..." autocomplete="off" />
+                    <input type="text" id="dashboard-search" placeholder="Search secure files...">
                 </div>
                 
                 <div class="toolbar-actions">
-                    <div class="select-wrapper">
-                        <select id="sort-strategy-select" class="dropdown-select">
-                            <option value="name-asc" id="opt-sort-name-asc">Name (A-Z)</option>
-                            <option value="name-desc" id="opt-sort-name-desc">Name (Z-A)</option>
-                            <option value="date-desc" id="opt-sort-date-desc">Newest First</option>
-                            <option value="date-asc" id="opt-sort-date-asc">Oldest First</option>
-                            <option value="size-desc" id="opt-sort-size-desc">Largest First</option>
-                            <option value="size-asc" id="opt-sort-size-asc">Smallest First</option>
-                        </select>
+                    <div class="mobile-quota-container">
+                        <i class="fa-solid fa-cloud" style="color: var(--accent-color);"></i>
+                        <div class="mobile-quota-bar">
+                            <div id="quota-progress-fill-mobile" style="width: 0%; height: 100%; background-color: var(--accent-color); transition: width 0.3s ease;"></div>
+                        </div>
+                        <span id="quota-used-text-mobile" style="font-weight:700;">0%</span>
                     </div>
 
-                    <div class="layout-toggle-group">
-                        <button type="button" id="layout-grid-btn" class="layout-btn active" title="Grid View">
-                            <i class="fa-solid fa-grip"></i>
-                        </button>
-                        <button type="button" id="layout-list-btn" class="layout-btn" title="List View">
-                            <i class="fa-solid fa-list"></i>
-                        </button>
-                    </div>
+                    <button type="button" class="theme-toggle-btn" id="theme-toggle-trigger" title="Toggle Theme">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
 
-                    <button type="button" id="lang-toggle-btn" class="lang-btn" data-lang="en">
+                    <button type="button" class="lang-btn" id="lang-toggle-btn">
                         <i class="fa-solid fa-globe"></i>
                         <span id="txt-lang-toggle">العربية</span>
                     </button>
 
-                    <div id="user-profile-badge" class="profile-badge">
+                    <div class="profile-badge">
                         <div class="profile-avatar">
-                            <i class="fa-solid fa-user-astronaut"></i>
+                            <i class="fa-solid fa-user-shield"></i>
                         </div>
-                        <span id="txt-profile-name" class="profile-name">Guest Node</span>
+                        <span class="profile-name" id="txt-profile-name">Secure Node</span>
                     </div>
                 </div>
             </header>
 
-            <div id="explorer-view-viewport" class="explorer-viewport">
-                <div id="file-explorer-grid" class="explorer-grid view-mode-grid">
-                    
-                    <div id="explorer-empty-state" class="empty-state hidden">
-                        <div class="empty-state-icon-wrapper">
-                            <i class="fa-solid fa-folder-open empty-icon"></i>
-                        </div>
-                        <h3 id="txt-empty-title">Your sandbox is empty</h3>
-                        <p id="txt-empty-desc">Upload files to encrypt and secure them within your local browser instance.</p>
+            <div class="explorer-viewport">
+                <div class="explorer-grid view-mode-grid" id="explorer-nodes-matrix">
                     </div>
-
-                </div>
             </div>
         </main>
     </div>
 
-    <div id="modal-overlay-layer" class="overlay-layer">
-        
-        <div id="modal-auth-container" class="auth-card">
+    <div class="overlay-layer hidden" id="gatekeeper-auth-overlay">
+        <div class="auth-card">
             <div class="auth-header">
-                <div class="auth-logo">
-                    <i class="fa-solid fa-vault"></i>
-                </div>
-                <h2 id="txt-auth-title">Initialize Sandbox Vault</h2>
-                <p id="txt-auth-desc">Set or enter your Master PIN and Username to open your cryptographically isolated workspace partition.</p>
+                <div class="auth-logo"><i class="fa-solid fa-key"></i></div>
+                <h2 id="txt-auth-title">Node Initialization</h2>
+                <p id="txt-auth-desc">Create or unlock your fully decentralized isolated client partition.</p>
             </div>
 
-            <div id="auth-error-feedback" class="error-banner hidden">
+            <div class="error-banner hidden" id="auth-diagnostic-banner">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <span id="txt-error-message">Invalid Master PIN sequence. Please verify and retry.</span>
+                <span id="auth-error-message">Invalid PIN. Decryption failure.</span>
             </div>
 
-            <form id="auth-validation-form" onsubmit="return false;" novalidate>
+            <form id="auth-gatekeeper-form" onsubmit="return false;">
                 <div class="form-group">
-                    <label for="auth-reg-username" id="lbl-auth-username">Workspace Username</label>
-                    <div class="input-icon-wrapper">
-                        <i class="fa-solid fa-user-shield field-icon"></i>
-                        <input type="text" id="auth-reg-username" placeholder="Enter node account name" required autocomplete="off" />
+                    <label id="txt-pin-label">4-Digit Secure PIN</label>
+                    <div class="pin-inputs-row" id="pin-matrix-container">
+                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
+                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
+                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
+                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
                     </div>
                 </div>
-
-                <div class="form-group text-center">
-                    <label id="lbl-auth-pin">Secure Master PIN Access Control</label>
-                    <div class="pin-inputs-row">
-                        <input type="password" id="pin-char-1" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required autocomplete="off" />
-                        <input type="password" id="pin-char-2" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required autocomplete="off" />
-                        <input type="password" id="pin-char-3" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required autocomplete="off" />
-                        <input type="password" id="pin-char-4" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required autocomplete="off" />
-                    </div>
-                </div>
-
-                <button type="submit" id="auth-submit-btn" class="auth-btn">
-                    <span id="txt-auth-btn-label">Unlock Storage Matrix</span>
-                    <i class="fa-solid fa-key-skeleton"></i>
+                <button type="submit" class="auth-btn" id="auth-submit-btn">
+                    <i class="fa-solid fa-unlock-keyhole"></i>
+                    <span id="txt-auth-submit">Access Partition</span>
                 </button>
             </form>
         </div>
     </div>
 
-    <div id="modal-global-container-layer" class="modal-layer hidden">
-        
-        <div id="modal-media-viewer-container" class="modal-card width-large hidden">
-            <header class="modal-card-header">
-                <h3 id="modal-media-title" class="modal-title">File Preview</h3>
-                <button type="button" class="modal-close-trigger-btn" id="btn-close-media-viewer">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </header>
-            
-            <div class="modal-card-body media-viewport-surface">
-                <div id="viewport-picture" class="viewport-block hidden">
-                    <img id="preview-img" src="" alt="Decrypted Resource Preview" />
-                </div>
-                <div id="viewport-video" class="viewport-block hidden">
-                    <video id="preview-video" controls controlsList="nodownload"></video>
-                </div>
-                <div id="viewport-audio" class="viewport-block hidden">
-                    <div class="audio-player-wrapper">
-                        <i class="fa-solid fa-music-note audio-icon"></i>
-                        <audio id="preview-audio" controls controlsList="nodownload"></audio>
-                    </div>
-                </div>
-                <div id="viewport-text" class="viewport-block hidden">
-                    <pre id="preview-text-content"></pre>
-                </div>
+    <div class="modal-layer hidden" id="media-preview-modal" style="z-index: 10000;">
+        <div class="modal-card width-large">
+            <div class="modal-card-header">
+                <h3 class="modal-title" id="preview-modal-title">Streaming Document Viewport</h3>
+                <button type="button" class="modal-close-trigger-btn" id="preview-close-trigger"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <footer class="modal-card-footer">
-                <div class="file-meta-info">
-                    <span id="modal-media-size-lbl">Size:</span>
-                    <strong id="modal-media-size-val">0 KB</strong>
+            <div class="modal-card-body media-viewport-surface" id="preview-modal-body">
                 </div>
-                <button type="button" class="btn-secondary" id="btn-close-media-footer">Close</button>
-            </footer>
-        </div>
-
-        <div id="modal-billing-subscription-container" class="modal-card width-medium hidden">
-            <header class="modal-card-header">
-                <h3 id="modal-billing-title" class="modal-title">Upgrade to Nebula Pro</h3>
-                <button type="button" class="modal-close-trigger-btn" id="btn-close-billing">
-                    <i class="fa-solid fa-xmark"></i>
+            <div class="modal-card-footer">
+                <span class="file-meta-info" id="preview-file-metrics">0 KB | Binary Node</span>
+                <button type="button" class="btn-secondary" id="preview-download-btn">
+                    <i class="fa-solid fa-download"></i> <span id="txt-prev-download">Download</span>
                 </button>
-            </header>
+            </div>
+        </div>
+    </div>
 
-            <form id="billing-checkout-form" onsubmit="return false;" novalidate>
-                <div class="modal-card-body">
-                    <div class="premium-benefits-card">
-                        <h4>Pro Plan Tier Features:</h4>
-                        <ul>
-                            <li><i class="fa-solid fa-circle-check"></i> Expand Sandboxed Storage Limit to 500 MB</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Advanced Cryptographic Integrity Verification</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Multi-Workspace Sandbox Splitting</li>
-                        </ul>
-                        <div class="pricing-badge">
-                            <span class="price">$9.99</span><span class="period">/ month</span>
-                        </div>
+    <div class="modal-layer hidden" id="premium-billing-modal" style="z-index: 10001;">
+        <div class="modal-card width-medium">
+            <div class="modal-card-header">
+                <h3 class="modal-title" id="txt-premium-title">Upgrade to Pro Workspace</h3>
+                <button type="button" class="modal-close-trigger-btn" id="premium-close-trigger"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-card-body">
+                <div class="premium-benefits-card">
+                    <h4 id="txt-benefits-title">Pro Tier Account Privileges</h4>
+                    <ul>
+                        <li><i class="fa-solid fa-circle-check"></i> <span id="txt-benefit-1">Storage allocation expanded to 500 MB</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span id="txt-benefit-2">High-velocity streaming buffers enabled</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span id="txt-benefit-3">Quantum-resistant cryptographic entropy</span></li>
+                    </ul>
+                    <div class="pricing-badge text-center">
+                        <span class="price">$4.99</span>
+                        <span class="period">/ <span id="txt-period">monthly</span></span>
                     </div>
-
+                </div>
+                
+                <form id="premium-billing-payment-form" onsubmit="return false;">
                     <div class="form-group">
-                        <label for="bill-card-name" id="lbl-bill-name">Cardholder Full Name</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" id="bill-card-name" placeholder="Johnathan Doe" required autocomplete="off" />
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="bill-card-number" id="lbl-bill-number">Credit Card Number</label>
+                        <label id="txt-card-number-lbl">Cardholder PAN Identifier</label>
                         <div class="input-icon-wrapper">
                             <i class="fa-solid fa-credit-card field-icon"></i>
-                            <input type="text" id="bill-card-number" placeholder="4111 2222 3333 4444" maxlength="19" required autocomplete="off" />
+                            <input type="text" placeholder="4111 2222 3333 4444" maxlength="19" required>
                         </div>
                     </div>
-
                     <div class="form-row-grid">
                         <div class="form-group">
-                            <label for="bill-card-expiry" id="lbl-bill-expiry">Expiration Date</label>
-                            <input type="text" id="bill-card-expiry" placeholder="MM/YY" maxlength="5" required autocomplete="off" />
+                            <label id="txt-card-expiry-lbl">Expiry Date</label>
+                            <input type="text" placeholder="MM/YY" maxlength="5" required>
                         </div>
                         <div class="form-group">
-                            <label for="bill-card-cvv" id="lbl-bill-cvv">Security Code (CVV)</label>
-                            <input type="password" id="bill-card-cvv" placeholder="321" maxlength="4" required autocomplete="off" />
+                            <label id="txt-card-cvv-lbl">CVC Verification</label>
+                            <input type="password" placeholder="•••" maxlength="3" required>
                         </div>
                     </div>
-                    
-                    <div id="billing-error-feedback" class="error-banner hidden">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        <span id="txt-billing-error">Payment verification failed. Review checkout details.</span>
-                    </div>
-                </div>
-
-                <footer class="modal-card-footer">
-                    <button type="button" class="btn-secondary" id="btn-cancel-billing">Cancel</button>
-                    <button type="submit" id="billing-submit-btn" class="btn-primary">
-                        <span id="txt-billing-btn-label">Activate Subscription</span>
-                        <i class="fa-solid fa-arrow-right-long"></i>
+                    <button type="submit" class="auth-btn" id="billing-submit-btn">
+                        <i class="fa-solid fa-shield-heart"></i>
+                        <span id="txt-billing-submit">Process Wire Transfer</span>
                     </button>
-                </footer>
-            </form>
+                </form>
+            </div>
         </div>
-
     </div>
 
-    <script src="router.js"></script>
     <script src="storage.js"></script>
     <script src="auth.js"></script>
-    <script src="viewer.js"></script>
-    <script src="upload.js"></script>
     <script src="ui.js"></script>
+    <script src="router.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
