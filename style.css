@@ -1,6 +1,7 @@
 /* ==========================================================================
    NebulaDrive Core Application Stylesheet
    Architecture: Zero-Shortcut Grid/Flex Framework & Bidirectional Matrix
+   Features: Universal Desktop & Mobile-First Responsive Fluidity
    ========================================================================== */
 
 /* --- Custom Property Configuration Layer --- */
@@ -820,4 +821,160 @@ html[dir="rtl"] .file-meta-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+}
+
+
+/* ==========================================================================
+   Mobile-First Optimizations (Responsive Liquid Layout)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: 70px;
+        flex-direction: row;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        z-index: 999;
+        padding: 0 12px;
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        border-left: none;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    html[dir="rtl"] .sidebar {
+        border-left: none;
+    }
+
+    .sidebar-branding, 
+    .sidebar-footer-quota {
+        display: none !important;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-around;
+        align-items: center;
+        gap: 0;
+    }
+
+    .nav-link {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px;
+        font-size: 0.75rem;
+        flex: 1;
+        text-align: center;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    .nav-link.active i {
+        color: var(--accent-color);
+    }
+
+    .sidebar-action-wrapper {
+        position: fixed;
+        bottom: 85px;
+        right: 20px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    html[dir="rtl"] .sidebar-action-wrapper {
+        right: auto;
+        left: 20px;
+    }
+
+    .upload-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        padding: 0;
+        box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+    }
+
+    #txt-upload-btn {
+        display: none;
+    }
+    
+    .upload-btn i {
+        font-size: 1.4rem;
+    }
+
+    .main-content {
+        padding-bottom: 70px;
+    }
+
+    .toolbar {
+        height: auto;
+        padding: 16px;
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .toolbar-search-wrapper {
+        width: 100%;
+    }
+
+    .toolbar-actions {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .profile-badge .profile-name {
+        display: none;
+    }
+
+    .profile-badge {
+        padding: 4px;
+    }
+
+    .explorer-viewport {
+        padding: 16px;
+    }
+
+    .explorer-grid.view-mode-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .file-card-node {
+        padding: 12px;
+    }
+
+    .explorer-grid.view-mode-grid .file-card-node {
+        height: 130px;
+    }
+
+    .auth-card {
+        width: 90%;
+        padding: 24px 16px;
+    }
+
+    .pin-box {
+        width: 48px;
+        height: 56px;
+        font-size: 1.5rem;
+    }
+
+    .modal-card.width-large,
+    .modal-card.width-medium {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .media-viewport-surface {
+        min-height: 280px;
+    }
 }
