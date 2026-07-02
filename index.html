@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NebulaDrive - Secure Decoupled Storage Platform</title>
+    <title>NFC GO - Secure Storage</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,41 +13,32 @@
         
         <aside class="sidebar">
             <div class="sidebar-branding">
-                <i class="fa-solid fa-user-astronaut branding-icon"></i>
-                <span class="branding-text">NebulaDrive</span>
+                <i class="fa-solid fa-cube branding-icon"></i>
+                <span class="branding-text">NFC GO</span>
             </div>
             
             <div class="sidebar-action-wrapper">
-                <label for="binary-file-injector" class="upload-btn">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span id="txt-upload-btn">Upload File</span>
+                <label for="binary-file-injector" class="desktop-upload-btn">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Upload File</span>
                 </label>
-                <input type="file" id="binary-file-injector" class="hidden-input" multiple>
             </div>
             
             <nav class="sidebar-nav">
                 <a href="#all" class="nav-link active" id="nav-all-trigger">
-                    <i class="fa-solid fa-folder-open"></i>
-                    <span id="txt-nav-all">All Files</span>
+                    <i class="fa-solid fa-folder"></i><span>All Files</span>
                 </a>
                 <a href="#images" class="nav-link" id="nav-images-trigger">
-                    <i class="fa-solid fa-image"></i>
-                    <span id="txt-nav-images">Images</span>
+                    <i class="fa-solid fa-image"></i><span>Photos</span>
                 </a>
                 <a href="#videos" class="nav-link" id="nav-videos-trigger">
-                    <i class="fa-solid fa-video"></i>
-                    <span id="txt-nav-videos">Videos</span>
-                </a>
-                <a href="#documents" class="nav-link" id="nav-documents-trigger">
-                    <i class="fa-solid fa-file-lines"></i>
-                    <span id="txt-nav-docs">Documents</span>
+                    <i class="fa-solid fa-video"></i><span>Videos</span>
                 </a>
             </nav>
             
-            <div class="sidebar-footer-quota" id="desktop-quota-block">
+            <div class="sidebar-footer-quota">
                 <div class="quota-header">
-                    <i class="fa-solid fa-database"></i>
-                    <span id="txt-quota-title">Storage Consumption</span>
+                    <i class="fa-solid fa-database"></i><span>Storage</span>
                 </div>
                 <div class="quota-progress-bar">
                     <div class="quota-fill" id="quota-progress-fill"></div>
@@ -56,45 +47,38 @@
                     <span id="quota-used-text">0 KB</span>
                     <span id="quota-total-text">of 5 MB</span>
                 </div>
-                <button type="button" class="upgrade-btn" id="upgrade-tier-trigger" style="margin-top: 12px;">
-                    <i class="fa-solid fa-gem"></i>
-                    <span id="txt-upgrade-btn">Go Premium</span>
-                </button>
             </div>
         </aside>
 
         <main class="main-content">
             
             <header class="toolbar">
+                <div class="toolbar-brand-mobile">
+                    <i class="fa-solid fa-cube" style="color: var(--accent-color);"></i>
+                    <span>NFC GO</span>
+                </div>
+
                 <div class="toolbar-search-wrapper">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="dashboard-search" placeholder="Search secure files...">
+                    <input type="text" id="dashboard-search" placeholder="Search files...">
                 </div>
                 
                 <div class="toolbar-actions">
                     <div class="mobile-quota-container">
-                        <i class="fa-solid fa-cloud" style="color: var(--accent-color);"></i>
                         <div class="mobile-quota-bar">
-                            <div id="quota-progress-fill-mobile" style="width: 0%; height: 100%; background-color: var(--accent-color); transition: width 0.3s ease;"></div>
+                            <div id="quota-progress-fill-mobile" style="width: 0%; height: 100%; background-color: var(--accent-color);"></div>
                         </div>
-                        <span id="quota-used-text-mobile" style="font-weight:700;">0%</span>
+                        <span id="quota-used-text-mobile">0%</span>
                     </div>
 
-                    <button type="button" class="theme-toggle-btn" id="theme-toggle-trigger" title="Toggle Theme">
+                    <button type="button" class="theme-toggle-btn" id="theme-toggle-trigger">
                         <i class="fa-solid fa-moon"></i>
                     </button>
 
                     <button type="button" class="lang-btn" id="lang-toggle-btn">
-                        <i class="fa-solid fa-globe"></i>
+                        <i class="fa-solid fa-text-width"></i>
                         <span id="txt-lang-toggle">العربية</span>
                     </button>
-
-                    <div class="profile-badge">
-                        <div class="profile-avatar">
-                            <i class="fa-solid fa-user-shield"></i>
-                        </div>
-                        <span class="profile-name" id="txt-profile-name">Secure Node</span>
-                    </div>
                 </div>
             </header>
 
@@ -105,97 +89,63 @@
         </main>
     </div>
 
+    <div class="mobile-bottom-nav" style="display: none;">
+        <a href="#all" class="mobile-nav-link active">
+            <i class="fa-solid fa-folder"></i>
+            <span>All Files</span>
+        </a>
+        <a href="#images" class="mobile-nav-link">
+            <i class="fa-solid fa-image"></i>
+            <span>Photos</span>
+        </a>
+        
+        <div class="mobile-floating-action">
+            <label for="binary-file-injector" class="mobile-upload-trigger-circle">
+                <i class="fa-solid fa-plus"></i>
+            </label>
+        </div>
+        
+        <a href="#videos" class="mobile-nav-link">
+            <i class="fa-solid fa-video"></i>
+            <span>Videos</span>
+        </a>
+        <a href="#favorites" class="mobile-nav-link">
+            <i class="fa-solid fa-heart"></i>
+            <span>Favorites</span>
+        </a>
+    </div>
+
+    <input type="file" id="binary-file-injector" multiple>
+
     <div class="overlay-layer hidden" id="gatekeeper-auth-overlay">
         <div class="auth-card">
-            <div class="auth-header">
-                <div class="auth-logo"><i class="fa-solid fa-key"></i></div>
-                <h2 id="txt-auth-title">Node Initialization</h2>
-                <p id="txt-auth-desc">Create or unlock your fully decentralized isolated client partition.</p>
+            <div class="auth-header" style="text-align:center; margin-bottom:20px;">
+                <h2>Secure Partition</h2>
+                <p>Enter your 4-digit security PIN to decrypt.</p>
             </div>
-
-            <div class="error-banner hidden" id="auth-diagnostic-banner">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <span id="auth-error-message">Invalid PIN. Decryption failure.</span>
-            </div>
-
+            <div class="error-banner hidden" id="auth-diagnostic-banner" style="color:red; margin-bottom:10px;">Invalid PIN!</div>
             <form id="auth-gatekeeper-form" onsubmit="return false;">
-                <div class="form-group">
-                    <label id="txt-pin-label">4-Digit Secure PIN</label>
-                    <div class="pin-inputs-row" id="pin-matrix-container">
-                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
-                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
-                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
-                        <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
-                    </div>
+                <div class="pin-inputs-row">
+                    <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
+                    <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
+                    <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
+                    <input type="password" class="pin-box" maxlength="1" pattern="[0-9]*" inputmode="numeric" required>
                 </div>
-                <button type="submit" class="auth-btn" id="auth-submit-btn">
-                    <i class="fa-solid fa-unlock-keyhole"></i>
-                    <span id="txt-auth-submit">Access Partition</span>
-                </button>
+                <button type="submit" class="auth-btn">Unlock Node</button>
             </form>
         </div>
     </div>
 
-    <div class="modal-layer hidden" id="media-preview-modal" style="z-index: 10000;">
-        <div class="modal-card width-large">
+    <div class="modal-layer hidden" id="media-preview-modal">
+        <div class="modal-card">
             <div class="modal-card-header">
-                <h3 class="modal-title" id="preview-modal-title">Streaming Document Viewport</h3>
-                <button type="button" class="modal-close-trigger-btn" id="preview-close-trigger"><i class="fa-solid fa-xmark"></i></button>
+                <h3 id="preview-modal-title">File Preview</h3>
+                <button type="button" class="modal-close-trigger-btn" id="preview-close-trigger" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
             </div>
-            <div class="modal-card-body media-viewport-surface" id="preview-modal-body">
+            <div class="modal-card-body" id="preview-modal-body" style="display:flex; justify-content:center; align-items:center; background:#000;">
                 </div>
             <div class="modal-card-footer">
-                <span class="file-meta-info" id="preview-file-metrics">0 KB | Binary Node</span>
-                <button type="button" class="btn-secondary" id="preview-download-btn">
-                    <i class="fa-solid fa-download"></i> <span id="txt-prev-download">Download</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-layer hidden" id="premium-billing-modal" style="z-index: 10001;">
-        <div class="modal-card width-medium">
-            <div class="modal-card-header">
-                <h3 class="modal-title" id="txt-premium-title">Upgrade to Pro Workspace</h3>
-                <button type="button" class="modal-close-trigger-btn" id="premium-close-trigger"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-card-body">
-                <div class="premium-benefits-card">
-                    <h4 id="txt-benefits-title">Pro Tier Account Privileges</h4>
-                    <ul>
-                        <li><i class="fa-solid fa-circle-check"></i> <span id="txt-benefit-1">Storage allocation expanded to 500 MB</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span id="txt-benefit-2">High-velocity streaming buffers enabled</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span id="txt-benefit-3">Quantum-resistant cryptographic entropy</span></li>
-                    </ul>
-                    <div class="pricing-badge text-center">
-                        <span class="price">$4.99</span>
-                        <span class="period">/ <span id="txt-period">monthly</span></span>
-                    </div>
-                </div>
-                
-                <form id="premium-billing-payment-form" onsubmit="return false;">
-                    <div class="form-group">
-                        <label id="txt-card-number-lbl">Cardholder PAN Identifier</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fa-solid fa-credit-card field-icon"></i>
-                            <input type="text" placeholder="4111 2222 3333 4444" maxlength="19" required>
-                        </div>
-                    </div>
-                    <div class="form-row-grid">
-                        <div class="form-group">
-                            <label id="txt-card-expiry-lbl">Expiry Date</label>
-                            <input type="text" placeholder="MM/YY" maxlength="5" required>
-                        </div>
-                        <div class="form-group">
-                            <label id="txt-card-cvv-lbl">CVC Verification</label>
-                            <input type="password" placeholder="•••" maxlength="3" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="auth-btn" id="billing-submit-btn">
-                        <i class="fa-solid fa-shield-heart"></i>
-                        <span id="txt-billing-submit">Process Wire Transfer</span>
-                    </button>
-                </form>
+                <button type="button" class="btn-secondary" id="preview-download-btn">Download</button>
             </div>
         </div>
     </div>
