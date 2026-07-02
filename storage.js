@@ -1,17 +1,17 @@
 /* ==========================================================================
-   NFC GO - Cloud Storage Engine Powered by Supabase (Forever Free)
+   NFC GO - Fixed Cloud Storage Engine Powered by Supabase
    ========================================================================== */
 
 class CloudStorageEngine {
     constructor() {
-        // مفاتيح الربط السحابية الخاصة بمشروعك يا ريس
+        // مفاتيح الربط السحابية الخاصة بمشروعك
         this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
         this.supabaseKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
         // استخراج الـ ID الفريد من الرابط ليفصل الكروت عن بعضها
         this.cardId = this.getCardIdFromUrl();
         
-        // مفاتيح كاش المتصفح للاحتفاظ بجلسة الدخول المؤقتة فقط
+        // مفاتيح كاش المتصفح للاحتفاظ بجلسة الدخول المؤقتة
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
@@ -37,32 +37,33 @@ class CloudStorageEngine {
 
     // فحص الحساب والمزامنة مع السحاب
     async initCloudVault() {
-        this.showCloudLoading(true);
+        this.showCloudLoading(true); // تشغيل التحميل أثناء فحص السيرفر
         try {
             // جلب الحساب الخاص بهذا الكارت من السحاب
             const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
             
             if (!account || account.length === 0) {
-                // [ First Scan ] الحساب مش موجود .. نفتح شاشة التسجيل لأول مرة
+                // [ First Scan ] الحساب مش موجود .. نغلق الـ Loader فوراً قبل فتح شاشة التسجيل
+                this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
-                // الحساب موجود .. نشوف هل مسجل دخول على المتصفح ده ولا نطلب الباسورد (Second Scan)
+                // الحساب موجود .. نشوف هل مسجل دخول على المتصفح ده ولا نطلب الباسورد
                 const isUnlocked = sessionStorage.getItem(this.authSessionKey);
                 if (isUnlocked === "true") {
                     await this.loadCloudFiles();
-                    this.showCloudLoading(false);
                 } else {
+                    this.showCloudLoading(false); // نغلق الـ Loader فوراً ليدخل الباسورد
                     this.renderLoginScreen(account[0].password, account[0].username);
                 }
             }
         } catch (err) {
             console.error("Cloud Error:", err);
-            alert("سيرفر السحاب واجه مشكلة في الاتصال، تأكد من إعدادات الجداول في Supabase.");
             this.showCloudLoading(false);
+            alert("واجهنا مشكلة في الاتصال بالسحاب. يرجى مراجعة الـ SQL Editor في Supabase.");
         }
     }
 
-    // شاشة الفحص الأول (First Scan)
+    // شاشة الفحص الأول (First Scan) - تظهر بدون أي حجب أو تعليق
     renderRegisterScreen() {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -97,7 +98,7 @@ class CloudStorageEngine {
         };
     }
 
-    // شاشة الفحص الثاني والأبدي (Second Scan & Forever) من أي جهاز
+    // شاشة الفحص الثاني والأبدي (Second Scan & Forever)
     renderLoginScreen(correctPassword, username) {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -155,7 +156,6 @@ class CloudStorageEngine {
                         is_favorite: false, 
                         date_added: new Date().toLocaleDateString()
                     };
-                    
                     await this.cloudInsert('vault_files', fileObj);
                     resolve();
                 };
@@ -338,8 +338,12 @@ class CloudStorageEngine {
             if (!loader) {
                 loader = document.createElement("div");
                 loader.id = "cloud-loader-overlay";
-                loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
-                loader.innerHTML = `<i class="fa-solid fa-cloud" class="fa-spin" style="font-size:3rem; color:#007bff; animation: fa-spin 2s linear infinite;"></i><p style="margin-top:15px; font-weight:bold;">جاري مزامنة ورفع البيانات سحابياً...</p>`;
+                loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
+                loader.innerHTML = `
+                    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
+                    <p style="font-weight:bold; font-size:1rem;">جاري التحقق والمزامنة سحابياً...</p>
+                    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+                `;
                 document.body.appendChild(loader);
             }
         } else if (loader) { loader.remove(); }
