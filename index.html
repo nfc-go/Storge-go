@@ -11,22 +11,19 @@
         #binary-file-injector { display: none !important; visibility: hidden !important; opacity: 0 !important; position: absolute !important; }
         .hidden-modal { display: none !important; }
         
-        /* ستايل نافذة الترقية المودرن */
         .upgrade-modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(4px); }
         .upgrade-card { background: var(--card-bg, #ffffff); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); text-align: center; color: var(--text-color, #333); }
         .upgrade-card h3 { margin-top: 0; font-size: 1.4rem; color: #007bff; }
         .upgrade-card p { font-size: 0.95rem; margin: 10px 0 20px; opacity: 0.8; }
-        .upgrade-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; text-align: center; font-size: 1.1rem; letter-spacing: 2px; }
+        .upgrade-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; text-align: center; font-size: 1.1rem; letter-spacing: 1px; }
         .btn-upgrade-submit { width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-bottom: 10px; transition: 0.2s; }
         .btn-contact-support { width: 100%; background: #007bff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
         .close-upgrade-btn { background: none; border: none; font-size: 1.5rem; float: right; cursor: pointer; margin-top: -10px; color: #999; }
         
-        /* كروت الملفات التفاعلية */
         .file-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
         .file-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,0.06) !important; }
         .fav-badge { position: absolute; top: 10px; right: 10px; color: #dc3545; font-size: 1.1rem; background: rgba(255,255,255,0.9); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        /* أزرار التحكم بالمعاينة */
         .preview-action-bar { display: flex; justify-content: space-around; width: 100%; margin-top: 15px; gap: 10px; }
         .preview-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; transition: 0.2s; }
         .btn-fav-toggle { background: #fff3cd; color: #856404; }
@@ -72,7 +69,7 @@
                 </div>
                 <div class="quota-metrics">
                     <span id="quota-used-text">0 KB</span>
-                    <span data-i18n="quota_of">of</span> <span id="quota-total-text">5 MB</span>
+                    <span data-i18n="quota_of">of</span> <span id="quota-total-text">20 GB</span>
                 </div>
             </div>
         </aside>
@@ -109,8 +106,7 @@
             </header>
 
             <div class="explorer-viewport" style="flex: 1; overflow-y: auto;">
-                <div class="explorer-grid view-mode-grid" id="explorer-nodes-matrix">
-                    </div>
+                <div class="explorer-grid view-mode-grid" id="explorer-nodes-matrix"></div>
             </div>
         </main>
     </div>
@@ -147,7 +143,7 @@
         <div class="upgrade-card">
             <button class="close-upgrade-btn" id="close-upgrade-modal">×</button>
             <h3 data-i18n="up_title">Storage Upgrade</h3>
-            <p id="upgrade-status-text">You have used 0 KB of 5 MB available.</p>
+            <p id="upgrade-status-text">You have used 0 KB of 20 GB available.</p>
             <input type="text" class="upgrade-input" id="upgrade-code-input" placeholder="ENTER UPGRADE CODE">
             <button class="btn-upgrade-submit" id="submit-upgrade-code" data-i18n="up_btn">Activate Code</button>
             <a href="https://wa.me/201021484084?text=Hi%20NFC%20GO,%20I%20want%20to%20buy%20an%20upgrade%20code%20for%20my%20storage." target="_blank" class="btn-contact-support">
@@ -221,7 +217,6 @@
                 if(window.StorageEngine) window.StorageEngine.renderNodes(window.currentCategoryView);
             };
 
-            // تشغيل الدارك مود
             const themeBtn = document.getElementById("theme-toggle-trigger");
             const savedTheme = localStorage.getItem("app-theme") || "light";
             document.documentElement.setAttribute("data-theme", savedTheme);
@@ -235,35 +230,73 @@
                 themeBtn.innerHTML = target === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
             };
 
-            // فتح وإغلاق نافذة الترقية
             const openUpgrade = () => {
                 document.getElementById("upgrade-panel-modal").classList.remove("hidden-modal");
                 const usedTxt = document.getElementById("quota-used-text").textContent || "0 KB";
-                const totalTxt = document.getElementById("quota-total-text").textContent || "5 MB";
+                const totalTxt = document.getElementById("quota-total-text").textContent || "20 GB";
                 document.getElementById("upgrade-status-text").textContent = currentLang === "ar" ? `لقد استهلكت ${usedTxt} من إجمالي ${totalTxt}.` : `You have used ${usedTxt} of ${totalTxt} available.`;
             };
             document.getElementById("mobile-quota-trigger").onclick = openUpgrade;
             document.getElementById("desktop-quota-trigger").onclick = openUpgrade;
             document.getElementById("close-upgrade-modal").onclick = () => document.getElementById("upgrade-panel-modal").classList.add("hidden-modal");
 
-            // تفعيل كود الترقية
+            // ====================================================================
+            // 🔒 لوحة الترقية الموسعة والمحمية - ترسانة الأكواد الجديدة 🔒
+            // ====================================================================
             document.getElementById("submit-upgrade-code").onclick = () => {
-                const code = document.getElementById("upgrade-code-input").value.trim();
-                if(code === "NFC100" || code === "PREMIUM2026") {
-                    alert(currentLang === "ar" ? "تم تفعيل الكود بنجاح وترقية المساحة إلى 100 جيجابايت!" : "Code activated successfully! Storage upgraded to 100 GB!");
-                    document.getElementById("quota-total-text").textContent = "100 GB";
+                const code = document.getElementById("upgrade-code-input").value.trim().toUpperCase();
+                
+                // قاموس الأكواد الاحترافي والمؤمن تماماً
+                const codeBook = {
+                    "NFC-A-STORAGE-GO-5GB":      { sizeBytes: 5 * 1024 * 1024 * 1024,      label: "5 GB" },
+                    "VAULT-X-CLOUD-SECURE-10GB": { sizeBytes: 10 * 1024 * 1024 * 1024,    label: "10 GB" },
+                    "PREMIUM-MATRIX-SPACE-50GB": { sizeBytes: 50 * 1024 * 1024 * 1024,    label: "50 GB" },
+                    "INFINITE-GO-ULTRA-100GB":   { sizeBytes: 100 * 1024 * 1024 * 1024,   label: "100 GB" },
+                    
+                    // 🔥 الأكواد الجديدة والضخمة المطلوبة لزبائنك المميزين
+                    "NEBULA-TITAN-VAULT-200GB":  { sizeBytes: 200 * 1024 * 1024 * 1024,   label: "200 GB" },
+                    "GALAXY-STORAGE-PRO-250GB":  { sizeBytes: 250 * 1024 * 1024 * 1024,   label: "250 GB" },
+                    "ORION-CLOUD-EXTREME-300GB": { sizeBytes: 300 * 1024 * 1024 * 1024,   label: "300 GB" },
+                    "QUANTUM-SHIELD-GO-400GB":   { sizeBytes: 400 * 1024 * 1024 * 1024,   label: "400 GB" },
+                    "APEX-OMNIVERSE-ONE-1TB":    { sizeBytes: 1024 * 1024 * 1024 * 1024,  label: "1 TB" }
+                };
+
+                let usedCodes = JSON.parse(localStorage.getItem("used_activation_codes") || "[]");
+
+                if (usedCodes.includes(code)) {
+                    const alertUsed = currentLang === "ar" ? "عذراً، هذا الكود تم استخدامه وتفعيله من قبل على هذا الحساب!" : "Sorry, this code has already been used and activated on this account!";
+                    alert(alertUsed);
+                    return;
+                }
+
+                if (codeBook[code]) {
+                    const chosen = codeBook[code];
+                    
+                    if (window.StorageEngine) {
+                        window.StorageEngine.maxQuotaBytes = chosen.sizeBytes;
+                        window.StorageEngine.updateQuotaUI();
+                    }
+                    
+                    document.getElementById("quota-total-text").textContent = chosen.label;
+                    localStorage.setItem("custom_quota_label", chosen.label);
+                    localStorage.setItem("custom_quota_bytes", chosen.sizeBytes);
+                    
+                    usedCodes.push(code);
+                    localStorage.setItem("used_activation_codes", JSON.stringify(usedCodes));
+                    
+                    const successAlert = currentLang === "ar" ? `تم تفعيل الكود بنجاح وترقية المساحة التخزينية لحسابك إلى ${chosen.label}! 🔥` : `Code activated successfully! Your storage space has been upgraded to ${chosen.label}! 🔥`;
+                    alert(successAlert);
                     document.getElementById("upgrade-panel-modal").classList.add("hidden-modal");
                 } else {
-                    alert(currentLang === "ar" ? "الكود غير صحيح! تواصل مع الدعم للحصول على كود مفعّل." : "Invalid code! Contact support to buy a valid upgrade code.");
+                    const errorAlert = currentLang === "ar" ? "هذا الكود غير صحيح أو منتهي الصلاحية! يرجى التواصل مع دعم NFC GO لشراء كود مفعّل." : "This code is invalid or expired! Please contact NFC GO support to purchase a valid code.";
+                    alert(errorAlert);
                 }
             };
 
-            // إغلاق نافذة المعاينة
             document.getElementById("preview-close-trigger").onclick = () => {
                 document.getElementById("media-preview-modal").classList.add("hidden-modal");
             };
 
-            // ربط التنقل والفلترة
             const links = document.querySelectorAll(".sidebar-nav .nav-link, .mobile-bottom-nav .mobile-nav-link");
             links.forEach(link => {
                 link.onclick = (e) => {
@@ -279,13 +312,24 @@
                 };
             });
 
-            // رفع الملف المرفوع
             document.getElementById("binary-file-injector").onchange = function(e) {
                 if (e.target.files.length === 0) return;
                 if (window.StorageEngine && typeof window.StorageEngine.handleUpload === "function") {
                     window.StorageEngine.handleUpload(e.target.files);
                 }
             };
+            
+            // قراءة وتعيين الحساب (لو لسه حساب جديد بياخد الـ 20 جيجا الافتراضية)
+            setTimeout(() => {
+                const savedLabel = localStorage.getItem("custom_quota_label") || "20 GB";
+                const savedBytes = localStorage.getItem("custom_quota_bytes") || (20 * 1024 * 1024 * 1024).toString();
+                
+                if (window.StorageEngine) {
+                    window.StorageEngine.maxQuotaBytes = parseInt(savedBytes);
+                    document.getElementById("quota-total-text").textContent = savedLabel;
+                    window.StorageEngine.updateQuotaUI();
+                }
+            }, 500);
         });
     </script>
     <script src="storage.js"></script>
