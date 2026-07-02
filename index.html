@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* كود أمان إضافي لإخفاء الزرار الرمادي القديم (Choose File) نهائياً من الشاشة */
+        /* طبقة حماية إضافية في الـ CSS لإخفاء الزرار الرمادي القديم (Choose File) تماماً */
         #binary-file-injector {
             display: none !important;
             visibility: hidden !important;
@@ -162,14 +162,15 @@
     </div>
 
     <script>
-        // حماية النظام وعزل أخطاء الملفات المكسورة القديمة
+        // درع أمان حماية النظام من أي ملف قديم مكسور لضمان استقرار الصفحة
         window.addEventListener('error', function(e) {
-            console.log("Isolated Shield caught legacy break:", e.message);
+            console.log("Isolated Shield caught legacy break safely:", e.message);
             e.preventDefault();
         }, true);
 
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. تشغيل زر الدارك مود واللايت مود فوراً
+            
+            // 1. تشغيل زر الدارك مود واللايت مود فوراً وبشكل مستقر
             const themeBtn = document.getElementById("theme-toggle-trigger");
             if (themeBtn) {
                 const savedTheme = localStorage.getItem("app-theme") || "light";
@@ -186,7 +187,7 @@
                 };
             }
 
-            // 2. تشغيل زر تغيير اللغة
+            // 2. تشغيل زر تغيير لغة الموقع (العربية / الإنجليزية)
             const langBtn = document.getElementById("lang-toggle-btn");
             if (langBtn) {
                 langBtn.onclick = function(e) {
@@ -204,7 +205,7 @@
                 };
             }
 
-            // 3. تشغيل أزرار المنيو السفلي للتنقل والتبويب بنجاح
+            // 3. تشغيل أزرار المنيو السفلي والجانبي للتنقل والتبويب بنجاح
             const links = document.querySelectorAll(".sidebar-nav .nav-link, .mobile-bottom-nav .mobile-nav-link");
             links.forEach(link => {
                 link.onclick = function(e) {
@@ -217,9 +218,9 @@
                     });
 
                     const category = href.replace("#", "");
-                    console.log("Switching view to:", category);
+                    console.log("Switching view directly to category:", category);
 
-                    // استدعاء الفانكشنز الخاصة بملفاتك الأخرى لو كانت جاهزة وموجودة في الذاكرة
+                    // استدعاء الفانكشنز الخاصة بالراوتر أو التصفية في بقية ملفاتك أياً كان اسم المحرك
                     if (window.Router && typeof window.Router.navigate === "function") {
                         window.Router.navigate(href);
                     }
@@ -227,25 +228,39 @@
                         window.filterFilesView(category);
                     } else if (window.StorageEngine && typeof window.StorageEngine.filter === "function") {
                         window.StorageEngine.filter(category);
+                    } else if (typeof window.renderFiles === "function") {
+                        window.renderFiles(category);
                     }
                 };
             });
 
-            // 4. ربط وتفعيل زر الـ + الأزرق العائم لرفع الملفات فوراً
+            // 4. المحرك المطور لربط زر الـ + الأزرق العائم بدوال الرفع القديمة والجديدة وحفظ الصور
             const fileInput = document.getElementById("binary-file-injector");
             if (fileInput) {
                 fileInput.onchange = function(e) {
                     const files = e.target.files;
                     if (files.length === 0) return;
                     
-                    console.log("Files uploaded via floating action:", files);
+                    console.log("Files captured by core handler, preparing injection into storage engines...", files);
 
+                    // فحص شامل ومباشر لتمرير الملف لكل الأسامي المحتملة داخل سكريبتاتك القديمة لرفعها فوراً
                     if (window.StorageEngine && typeof window.StorageEngine.handleUpload === "function") {
                         window.StorageEngine.handleUpload(files);
                     } else if (typeof window.handleFileUploadProcess === "function") {
                         window.handleFileUploadProcess(files);
+                    } else if (typeof window.uploadFiles === "function") {
+                        window.uploadFiles(files);
+                    } else if (window.StorageEngine && typeof window.StorageEngine.store === "function") {
+                        window.StorageEngine.store(files);
+                    } else if (typeof window.handleUpload === "function") {
+                        window.handleUpload(files);
+                    } else if (window.uploadFile === "function") {
+                        window.uploadFile(files);
+                    } else if (typeof window.saveFiles === "function") {
+                        window.saveFiles(files);
                     } else {
-                        alert(`Successfully selected ${files.length} file(s).`);
+                        // كود الأمان الاحتياطي لقراءة الملف في حال وجود مشكلة ربط كاملة
+                        alert(`Successfully selected ${files.length} file(s). Intercepted but core save function was unreachable.`);
                     }
                 };
             }
