@@ -1,59 +1,81 @@
 /* ==========================================================================
-   NFC GO - Ultimate Cloud Storage Engine (Guaranteed Fix)
+   NFC GO - Ultimate Cloud Storage Engine (Complete & Fixed Version)
    ========================================================================== */
 
 class CloudStorageEngine {
     constructor() {
+        // مفاتيح الربط السحابية الخاصة بمشروعك على Supabase
         this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
         this.supabaseKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
+        // لقط الـ ID وحفظه في الذاكرة لضمان عدم ضياعه بعد الريفريش
         this.cardId = this.getCardIdFromUrl();
         
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
 
+        // المساحة الافتراضية 20 جيجا بايت لكل كارت جديد
         this.maxQuotaBytes = parseInt(localStorage.getItem(this.quotaBytesKey)) || (20 * 1024 * 1024 * 1024);
         this.files = [];
         this.activePreviewFileId = null;
 
+        // تهيئة جداول السحاب تلقائياً وفحص الأمان
         this.initCloudVault();
     }
 
     getCardIdFromUrl() {
         const hash = window.location.hash;
-        if (!hash || hash === "#all" || hash === "#images" || hash === "#videos" || hash === "#favorites") {
-            return "default_vault";
+        let cleanId = "";
+
+        // لو الرابط فيه الهاش والـ ID، نلقطه فوراً ونخزنه
+        if (hash && hash.includes("#/") && hash !== "#/all" && hash !== "#/images" && hash !== "#/videos" && hash !== "#/favorites") {
+            cleanId = hash.replace("#/", "").split("?")[0].split("/")[0];
+            if (cleanId) {
+                localStorage.setItem("nfc_saved_card_id", cleanId); // حفظ أبدي في الجهاز
+                return cleanId;
+            }
         }
-        let cleanId = hash.replace("#/", "").replace("#?id=", "");
-        cleanId = cleanId.split("?")[0].split("/")[0]; 
-        return cleanId || "default_vault";
+
+        // لو مفيش هاش (زي بعد الريفريش)، بنجيبه من الذاكرة اللي حفظناها قبل كدة
+        const savedId = localStorage.getItem("nfc_saved_card_id");
+        if (savedId) {
+            return savedId;
+        }
+
+        // كحل أخير لو أول مرة يفتح خالص بدون رابط مخصص
+        return "default_vault";
     }
 
+    // فحص الحساب والمزامنة مع السحاب
     async initCloudVault() {
-        this.showCloudLoading(true);
+        this.showCloudLoading(true); // تشغيل التحميل أثناء فحص السيرفر
         try {
+            // جلب الحساب الخاص بهذا الكارت من السحاب
             const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
             
             if (!account || account.length === 0) {
+                // الحساب مش موجود .. نغلق الـ Loader فوراً قبل فتح شاشة التسجيل
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
+                // الحساب موجود .. نشوف هل مسجل دخول على المتصفح ده ولا نطلب الباسورد
                 const isUnlocked = sessionStorage.getItem(this.authSessionKey);
                 if (isUnlocked === "true") {
                     await this.loadCloudFiles();
                 } else {
-                    this.showCloudLoading(false);
+                    this.showCloudLoading(false); // نغلق الـ Loader فوراً ليدخل الباسورد
                     this.renderLoginScreen(account[0].password, account[0].username);
                 }
             }
         } catch (err) {
             console.error("Cloud Error:", err);
             this.showCloudLoading(false);
-            this.renderRegisterScreen(); // لو حصل أي خطأ افتح التسجيل كأمان
+            this.renderRegisterScreen(); // كخطوة أمان لو السيرفر اتأخر افتح التسجيل
         }
     }
 
+    // شاشة الفحص الأول (First Scan)
     renderRegisterScreen() {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -80,7 +102,7 @@ class CloudStorageEngine {
 
             this.showCloudLoading(true);
             
-            // إرسال البيانات للسيرفر
+            // إرسال مباشر وسريع للسيرفر
             await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
             
             // حفظ الجلسة محلياً فوراً لتخطي الحلقات المفرغة
@@ -95,6 +117,7 @@ class CloudStorageEngine {
         };
     }
 
+    // شاشة طلب كلمة المرور (الحساب موجود بالفعل)
     renderLoginScreen(correctPassword, username) {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -127,6 +150,7 @@ class CloudStorageEngine {
         document.getElementById("login-password").onkeydown = (e) => { if(e.key === "Enter") checkUnlock(); };
     }
 
+    // جلب الملفات المخزنة من السحاب
     async loadCloudFiles() {
         this.showCloudLoading(true);
         const fetched = await this.cloudFetch('vault_files', `card_id=eq.${this.cardId}`);
@@ -136,6 +160,7 @@ class CloudStorageEngine {
         this.showCloudLoading(false);
     }
 
+    // رفع الملفات سحابياً
     async handleUpload(fileList) {
         this.showCloudLoading(true);
         for (let file of Array.from(fileList)) {
@@ -161,6 +186,7 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
+    // إضافة أو إزالة من المفضلة
     async toggleFavoriteCloud(fileId, currentStatus) {
         this.showCloudLoading(true);
         await this.cloudUpdate('vault_files', { is_favorite: !currentStatus }, `and=(card_id.eq.${this.cardId},file_id.eq.${fileId})`);
@@ -168,6 +194,7 @@ class CloudStorageEngine {
         this.openFilePreview(fileId);
     }
 
+    // حذف ملف نهائياً من السحاب
     async deleteFileCloud(fileId) {
         this.showCloudLoading(true);
         await this.cloudDelete('vault_files', `and=(card_id.eq.${this.cardId},file_id.eq.${fileId})`);
@@ -176,9 +203,9 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
-    // ==========================================
-    // 🌐 دالة الجلب والاتصال بالسحاب المعدلة
-    // ==========================================
+    // ==========================================================================
+    // 🌐 الدوال الأساسية للاتصال بـ Supabase API REST
+    // ==========================================================================
     async cloudFetch(table, queryStr = "") {
         try {
             const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
@@ -190,7 +217,6 @@ class CloudStorageEngine {
 
     async cloudInsert(table, dataObj) {
         try {
-            // إرسال مباشر وسريع دون انتظار رد معقد
             await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
                 method: "POST",
                 headers: { 
@@ -222,9 +248,9 @@ class CloudStorageEngine {
         } catch(e) { console.error(e); }
     }
 
-    // ==========================================
-    // ⚙️ دوال الواجهة والعرض (UI)
-    // ==========================================
+    // ==========================================================================
+    // ⚙️ دوال التحكم بالواجهة الرسومية وعرض البيانات (UI)
+    // ==========================================================================
     filter(category) { this.renderNodes(category); }
     getUsedBytes() { return this.files.reduce((acc, f) => acc + f.size, 0); }
 
@@ -350,7 +376,7 @@ class CloudStorageEngine {
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري المزامنة مع السحاب...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري المزامنة والاتصال بالسحاب...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
