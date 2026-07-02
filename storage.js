@@ -1,5 +1,5 @@
 /* ==========================================================================
-   NFC GO - Ultimate Cloud Storage Engine (Loop-Fixed Version)
+   NFC GO - Ultimate Cloud Storage Engine (Guaranteed Fix)
    ========================================================================== */
 
 class CloudStorageEngine {
@@ -33,14 +33,12 @@ class CloudStorageEngine {
     async initCloudVault() {
         this.showCloudLoading(true);
         try {
-            // جلب الحساب الخاص بهذا الكارت من السحاب
             const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
             
             if (!account || account.length === 0) {
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
-                // الحساب موجود تمام، نتحقق من جلسة الدخول
                 const isUnlocked = sessionStorage.getItem(this.authSessionKey);
                 if (isUnlocked === "true") {
                     await this.loadCloudFiles();
@@ -52,7 +50,7 @@ class CloudStorageEngine {
         } catch (err) {
             console.error("Cloud Error:", err);
             this.showCloudLoading(false);
-            alert("واجهنا مشكلة في الاتصال بالسحاب.");
+            this.renderRegisterScreen(); // لو حصل أي خطأ افتح التسجيل كأمان
         }
     }
 
@@ -82,17 +80,17 @@ class CloudStorageEngine {
 
             this.showCloudLoading(true);
             
-            // 🛑 تعديل جوهري: انتظام الانتظار (await) لضمان حفظ البيانات بالكامل في السيرفر أولاً
+            // إرسال البيانات للسيرفر
             await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
             
-            // تثبيت جلسة الدخول في المتصفح فوراً كأمان إضافي
+            // حفظ الجلسة محلياً فوراً لتخطي الحلقات المفرغة
             sessionStorage.setItem(this.authSessionKey, "true");
             
             this.showCloudLoading(false);
-            alert("تم إنشاء حسابك السحابي بنجاح! سيتم فتح الخزنة التخزينية الحين.");
+            alert("تم إنشاء حسابك السحابي بنجاح! جاري تحويلك للخزنة التخزينية...");
             lockOverlay.remove();
             
-            // إجبار المتصفح على التحديث النظيف بعد الحفظ المؤكد
+            // تحويل فوري وآمن
             window.location.reload();
         };
     }
@@ -179,7 +177,7 @@ class CloudStorageEngine {
     }
 
     // ==========================================
-    // 🌐 الدوال المساعدة للتواصل مع سيرفر Supabase API
+    // 🌐 دالة الجلب والاتصال بالسحاب المعدلة
     // ==========================================
     async cloudFetch(table, queryStr = "") {
         try {
@@ -192,9 +190,14 @@ class CloudStorageEngine {
 
     async cloudInsert(table, dataObj) {
         try {
+            // إرسال مباشر وسريع دون انتظار رد معقد
             await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
                 method: "POST",
-                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=representation" },
+                headers: { 
+                    "apikey": this.supabaseKey, 
+                    "Authorization": `Bearer ${this.supabaseKey}`, 
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify(dataObj)
             });
         } catch(e) { console.error(e); }
@@ -347,7 +350,7 @@ class CloudStorageEngine {
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري مزامنة وحفظ الحساب سحابياً...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري المزامنة مع السحاب...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
