@@ -1,19 +1,92 @@
 /* ==========================================================================
-   NebulaDrive / NFC GO - Professional Storage Engine Core
+   NebulaDrive / NFC GO - Professional Storage Engine Core with Auth Lock
    ========================================================================== */
 
 class StorageEngineCore {
     constructor() {
         this.storageKey = "nfc_go_vault_files";
-        this.maxQuotaBytes = 5 * 1024 * 1024;
+        // المساحة الافتراضية تبدأ من 20 جيجا بايت كما طلبت يا ريس
+        this.maxQuotaBytes = parseInt(localStorage.getItem("custom_quota_bytes")) || (20 * 1024 * 1024 * 1024);
         this.files = this.loadFromStorage();
         this.activePreviewFileId = null;
+        
+        // تشغيل فحص الأمان والحساب فوراً عند التحميل
+        this.initSecurityCheck();
         
         setTimeout(() => {
             this.updateQuotaUI();
             this.renderNodes("all");
             this.bindModalActionButtons();
         }, 300);
+    }
+
+    // ==========================================
+    // 🔒 نظام الفحص الأول والثاني (Auth System)
+    // ==========================================
+    initSecurityCheck() {
+        // بنشوف هل العميل عمل حساب قبل كده ولا دي أول قراءة للكارت (First Scan)
+        const hasAccount = localStorage.getItem("nfc_vault_has_account");
+        
+        // إنشاء شاشة القفل ديناميكياً لحماية الملفات بالكامل
+        const lockOverlay = document.createElement("div");
+        lockOverlay.id = "nfc-auth-overlay";
+        lockOverlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:#111116; z-index:99999; display:flex; justify-content:center; align-items:center; color:#fff; font-family:sans-serif; padding:20px; box-sizing:border-box;";
+        
+        if (!hasAccount) {
+            // === [ First Scan ] === إنشاء الحساب لأول مرة
+            lockOverlay.innerHTML = `
+                <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
+                    <i class="fa-solid fa-user-shield" style="font-size:3.5rem; color:#007bff; margin-bottom:15px;"></i>
+                    <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO - Setup Account</h2>
+                    <p style="font-size:0.85rem; color:#aaa; margin-bottom:20px;">First Scan: Create your secure username and password below.</p>
+                    <input type="text" id="reg-username" placeholder="Choose Username" style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                    <input type="password" id="reg-password" placeholder="Create Password" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                    <button id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">Create & Save Account</button>
+                </div>
+            `;
+            document.body.appendChild(lockOverlay);
+
+            document.getElementById("btn-save-account").onclick = () => {
+                const user = document.getElementById("reg-username").value.trim();
+                const pass = document.getElementById("reg-password").value.trim();
+                if(!user || !pass) {
+                    alert("Please fill in both fields!");
+                    return;
+                }
+                localStorage.setItem("nfc_vault_user", user);
+                localStorage.setItem("nfc_vault_pass", pass);
+                localStorage.setItem("nfc_vault_has_account", "true");
+                alert("Account created successfully! Welcome to your secure space.");
+                lockOverlay.remove();
+            };
+        } else {
+            // === [ Second Scan & Forever ] === طلب الباسورد فقط في المرات القادمة
+            lockOverlay.innerHTML = `
+                <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
+                    <i class="fa-solid fa-lock" style="font-size:3.5rem; color:#dc3545; margin-bottom:15px;"></i>
+                    <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO - Secure Lock</h2>
+                    <p style="font-size:0.85rem; color:#aaa; margin-bottom:20px;">Enter your password to unlock your storage vault.</p>
+                    <input type="password" id="login-password" placeholder="Enter Password" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center; font-size:1.2rem; letter-spacing:2px;">
+                    <button id="btn-unlock-vault" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">Unlock Storage</button>
+                </div>
+            `;
+            document.body.appendChild(lockOverlay);
+
+            const checkUnlock = () => {
+                const enteredPass = document.getElementById("login-password").value;
+                const correctPass = localStorage.getItem("nfc_vault_pass");
+                if (enteredPass === correctPass) {
+                    lockOverlay.remove();
+                } else {
+                    alert("Incorrect password! Access Denied.");
+                }
+            };
+
+            document.getElementById("btn-unlock-vault").onclick = checkUnlock;
+            document.getElementById("login-password").onkeydown = (e) => {
+                if(e.key === "Enter") checkUnlock();
+            };
+        }
     }
 
     loadFromStorage() {
@@ -65,10 +138,13 @@ class StorageEngineCore {
         const pct = Math.min((usedBytes / this.maxQuotaBytes) * 100, 100).toFixed(1);
         const usedKB = (usedBytes / 1024).toFixed(1);
 
+        const currentLabel = localStorage.getItem("custom_quota_label") || "20 GB";
+
         if(document.getElementById("quota-progress-fill")) document.getElementById("quota-progress-fill").style.width = `${pct}%`;
         if(document.getElementById("quota-progress-fill-mobile")) document.getElementById("quota-progress-fill-mobile").style.width = `${pct}%`;
-        if(document.getElementById("quota-used-text")) document.getElementById("quota-used-text").textContent = `${usedKB} KB`;
+        if(document.getElementById("quota-used-text")) document.getElementById("quota-used-text").textContent = usedKB > 1024 ? `${(usedKB/1024).toFixed(1)} MB` : `${usedKB} KB`;
         if(document.getElementById("quota-used-text-mobile")) document.getElementById("quota-used-text-mobile").textContent = `${Math.round(pct)}%`;
+        if(document.getElementById("quota-total-text")) document.getElementById("quota-total-text").textContent = currentLabel;
     }
 
     openFilePreview(fileId) {
