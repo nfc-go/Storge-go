@@ -1,82 +1,64 @@
 /* ==========================================================================
-   NebulaDrive / NFC GO - Fail-Safe UI Management Engine (Anti-Crash Version)
+   NebulaDrive / NFC GO - Absolute Fail-Safe Navigation & Theme Engine
    ========================================================================== */
 
-// لمنع أي خطأ في الملفات الأخرى من إيقاف كود الواجهة
-window.addEventListener('error', function(e) {
-    console.warn("NebulaDrive Shield caught an external script error safely:", e.message);
-    e.preventDefault(); 
-}, true);
-
-document.addEventListener("DOMContentLoaded", () => {
-    // خلق زراير وهمية في الخلفية لو الملفات القديمة بتدور عليها عشان المتصفح ما يعملش Crash
-    createDummyElementsForLegacyScripts();
-
-    // تشغيل الأزرار الفعلية الحالية
-    initializeThemeEngine();
-    initializeLanguageEngine();
-    initializeNavigationSystem();
-    initializeUploadPipeline();
-});
-
-/**
- * 1. حماية النظام من ملفات الجافا سكريبت القديمة
- * لو ملف app.js أو غيره بيدور على id قديم، بنعمله عنصر وهمي عشان الكود ما يقفش
- */
-function createDummyElementsForLegacyScripts() {
+// حقن عناصر وهمية فوراً لحماية النظام من الملفات القديمة التي تسبب توقف المتصفح
+(function injectGuards() {
     const legacyIds = [
         "nav-all-trigger", "nav-images-trigger", "nav-videos-trigger", 
         "nav-documents-trigger", "upgrade-tier-trigger", "preview-close-trigger",
         "preview-download-btn", "premium-close-trigger", "billing-submit-btn"
     ];
-    
     legacyIds.forEach(id => {
         if (!document.getElementById(id)) {
             const dummy = document.createElement("div");
             dummy.id = id;
             dummy.style.display = "none";
-            document.body.appendChild(dummy);
+            document.documentElement.appendChild(dummy);
         }
     });
-}
+})();
 
-/**
- * 2. محرك التحكم بالـ Dark Mode & Light Mode
- */
-function initializeThemeEngine() {
-    const themeBtn = document.getElementById("theme-toggle-trigger");
-    if (!themeBtn) return;
+// حماية حية من أخطاء الملفات الأخرى
+window.addEventListener('error', function(e) {
+    console.log("Nebula Shield caught external break:", e.message);
+    e.preventDefault();
+}, true);
 
+// تشغيل الأحداث بمجرد جاهزية الـ DOM
+document.addEventListener("DOMContentLoaded", () => {
+    bindThemeControl();
+    bindLanguageControl();
+    bindNavigationControl();
+    bindUploadControl();
+});
+
+function bindThemeControl() {
+    const btn = document.getElementById("theme-toggle-trigger");
+    if (!btn) return;
+    
     const savedTheme = localStorage.getItem("app-theme") || "light";
     document.documentElement.setAttribute("data-theme", savedTheme);
-    updateThemeIcon(themeBtn, savedTheme);
+    btn.innerHTML = savedTheme === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
 
-    themeBtn.addEventListener("click", (e) => {
+    btn.onclick = function(e) {
         e.preventDefault();
-        const currentTheme = document.documentElement.getAttribute("data-theme");
-        const targetTheme = currentTheme === "dark" ? "light" : "dark";
-        
-        document.documentElement.setAttribute("data-theme", targetTheme);
-        localStorage.setItem("app-theme", targetTheme);
-        updateThemeIcon(themeBtn, targetTheme);
-    });
+        const current = document.documentElement.getAttribute("data-theme");
+        const target = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", target);
+        localStorage.setItem("app-theme", target);
+        btn.innerHTML = target === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+    };
 }
 
-function updateThemeIcon(btn, theme) {
-    btn.innerHTML = theme === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
-}
+function bindLanguageControl() {
+    const btn = document.getElementById("lang-toggle-btn");
+    if (!btn) return;
 
-/**
- * 3. محرك تغيير اللغات
- */
-function initializeLanguageEngine() {
-    const langBtn = document.getElementById("lang-toggle-btn");
-    if (!langBtn) return;
-
-    langBtn.addEventListener("click", (e) => {
+    btn.onclick = function(e) {
         e.preventDefault();
-        const currentDir = document.documentElement.getAttribute("dir") || "ltr";
-        if (currentDir === "ltr") {
+        const dir = document.documentElement.getAttribute("dir") || "ltr";
+        if (dir === "ltr") {
             document.documentElement.setAttribute("dir", "rtl");
             document.documentElement.setAttribute("lang", "ar");
             const txt = document.getElementById("txt-lang-toggle");
@@ -87,84 +69,69 @@ function initializeLanguageEngine() {
             const txt = document.getElementById("txt-lang-toggle");
             if (txt) txt.textContent = "العربية";
         }
-    });
+    };
 }
 
-/**
- * 4. نظام التنقل والتبويب للموبايل والكمبيوتر
- */
-function initializeNavigationSystem() {
-    const desktopLinks = document.querySelectorAll(".sidebar-nav .nav-link");
-    const mobileLinks = document.querySelectorAll(".mobile-bottom-nav .mobile-nav-link");
-    const allLinks = [...desktopLinks, ...mobileLinks];
-
-    allLinks.forEach(link => {
-        link.addEventListener("click", (e) => {
+function bindNavigationControl() {
+    // التقاط الروابط العلوية والسفلية الجديدة للموبايل والكمبيوتر
+    const links = document.querySelectorAll(".sidebar-nav .nav-link, .mobile-bottom-nav .mobile-nav-link");
+    
+    links.forEach(link => {
+        link.onclick = function(e) {
             e.preventDefault();
-            const targetHash = link.getAttribute("href");
+            const href = link.getAttribute("href");
             
-            allLinks.forEach(l => l.classList.remove("active"));
-            allLinks.forEach(l => {
-                if (l.getAttribute("href") === targetHash) l.classList.add("active");
+            // إزالة وتفعيل النمط النشط نشط
+            links.forEach(l => l.classList.remove("active"));
+            links.forEach(l => {
+                if (l.getAttribute("href") === href) l.classList.add("active");
             });
 
-            // تحفيز الكود القديم لو كان شغال بناء على الضغط
-            const legacyIdMap = {
-                "#all": "nav-all-trigger",
-                "#images": "nav-images-trigger",
-                "#videos": "nav-videos-trigger"
-            };
-            const legacyId = legacyIdMap[targetHash];
+            // تمرير الأكشن للكود القديم إذا كان يبحث عنه
+            const legacyMap = { "#all": "nav-all-trigger", "#images": "nav-images-trigger", "#videos": "nav-videos-trigger" };
+            const legacyId = legacyMap[href];
             if (legacyId && document.getElementById(legacyId)) {
-                document.getElementById(legacyId).click();
+                try { document.getElementById(legacyId).click(); } catch(err){}
             }
 
-            // التوجيه الأساسي للنظام
+            // تشغيل الراوتر إن وجد
             if (window.Router && typeof window.Router.navigate === "function") {
-                window.Router.navigate(targetHash);
+                window.Router.navigate(href);
             } else if (typeof window.filterFilesView === "function") {
-                window.filterFilesView(targetHash.replace("#", ""));
+                window.filterFilesView(href.replace("#", ""));
             }
-        });
+        };
     });
 }
 
-/**
- * 5. نظام معالجة ورفع الملفات الذكي
- */
-function initializeUploadPipeline() {
-    const fileInput = document.getElementById("binary-file-injector");
-    if (!fileInput) return;
+function bindUploadControl() {
+    const input = document.getElementById("binary-file-injector");
+    if (!input) return;
 
-    fileInput.addEventListener("change", (e) => {
-        const selectedFiles = e.target.files;
-        if (selectedFiles.length === 0) return;
+    input.onchange = function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
 
-        // تمرير الملفات للمحركات التخزينية في app.js أو storage.js بالتبادل لضمان العمل
         if (window.StorageEngine && typeof window.StorageEngine.handleUpload === "function") {
-            window.StorageEngine.handleUpload(selectedFiles);
+            window.StorageEngine.handleUpload(files);
         } else if (typeof window.handleFileUploadProcess === "function") {
-            window.handleFileUploadProcess(selectedFiles);
+            window.handleFileUploadProcess(files);
         } else {
-            alert(`Selected ${selectedFiles.length} file(s) successfully.`);
+            alert(`Selected ${files.length} file(s) successfully!`);
         }
-    });
+    };
 }
 
-/**
- * عداد المساحة الدايناميكي
- */
 function updateApplicationQuota(usedBytes, totalBytes = 5242880) {
     const percentage = Math.min((usedBytes / totalBytes) * 100, 100).toFixed(1);
-    
-    const desktopFill = document.getElementById("quota-progress-fill");
-    const desktopText = document.getElementById("quota-used-text");
-    if (desktopFill) desktopFill.style.width = `${percentage}%`;
-    if (desktopText) desktopText.textContent = `${(usedBytes / 1024).toFixed(1)} KB`;
+    const dFill = document.getElementById("quota-progress-fill");
+    const dText = document.getElementById("quota-used-text");
+    if (dFill) dFill.style.width = `${percentage}%`;
+    if (dText) dText.textContent = `${(usedBytes / 1024).toFixed(1)} KB`;
 
-    const mobileFill = document.getElementById("quota-progress-fill-mobile");
-    const mobileText = document.getElementById("quota-used-text-mobile");
-    if (mobileFill) mobileFill.style.width = `${percentage}%`;
-    if (mobileText) mobileText.textContent = `${Math.round(percentage)}%`;
+    const mFill = document.getElementById("quota-progress-fill-mobile");
+    const mText = document.getElementById("quota-used-text-mobile");
+    if (mFill) mFill.style.width = `${percentage}%`;
+    if (mText) mText.textContent = `${Math.round(percentage)}%`;
 }
 window.updateApplicationQuota = updateApplicationQuota;
