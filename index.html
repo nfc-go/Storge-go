@@ -1,244 +1,112 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFC GO - Secure Storage</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        #binary-file-injector { display: none !important; visibility: hidden !important; opacity: 0 !important; position: absolute !important; }
-        .hidden-modal { display: none !important; }
-        /* ستايل سريع ومودرن لنافذة الترقية */
-        .upgrade-modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(4px); }
-        .upgrade-card { background: var(--card-bg, #ffffff); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); text-align: center; color: var(--text-color, #333); }
-        .upgrade-card h3 { margin-top: 0; font-size: 1.4rem; color: #007bff; }
-        .upgrade-card p { font-size: 0.95rem; margin: 10px 0 20px; opacity: 0.8; }
-        .upgrade-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; text-align: center; font-size: 1.1rem; letter-spacing: 2px; }
-        .btn-upgrade-submit { width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-bottom: 10px; transition: 0.2s; }
-        .btn-upgrade-submit:hover { background: #218838; }
-        .btn-contact-support { width: 100%; background: #007bff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-        .btn-contact-support:hover { background: #0069d9; }
-        .close-upgrade-btn { background: none; border: none; font-size: 1.5rem; float: right; cursor: pointer; margin-top: -10px; color: #999; }
-    </style>
-</head>
-<body>
+/* ==========================================================================
+   NebulaDrive / NFC GO - Professional Storage Engine Core
+   ========================================================================== */
 
-    <div class="app-layout" id="application-viewport-shell">
-        <aside class="sidebar">
-            <div class="sidebar-branding">
-                <i class="fa-solid fa-cube branding-icon"></i>
-                <span class="branding-text" data-i18n="logo">NFC GO</span>
-            </div>
-            <div class="sidebar-action-wrapper">
-                <label for="binary-file-injector" class="desktop-upload-btn" style="cursor: pointer;">
-                    <i class="fa-solid fa-plus"></i>
-                    <span data-i18n="upload_btn">Upload File</span>
-                </label>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#all" class="nav-link active" id="nav-all-trigger">
-                    <i class="fa-solid fa-folder"></i><span data-i18n="nav_all">All Files</span>
-                </a>
-                <a href="#images" class="nav-link" id="nav-images-trigger">
-                    <i class="fa-solid fa-image"></i><span data-i18n="nav_photos">Photos</span>
-                </a>
-                <a href="#videos" class="nav-link" id="nav-videos-trigger">
-                    <i class="fa-solid fa-video"></i><span data-i18n="nav_videos">Videos</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer-quota" id="desktop-quota-trigger" style="cursor: pointer;">
-                <div class="quota-header">
-                    <i class="fa-solid fa-database"></i><span data-i18n="storage_title">Storage</span>
-                </div>
-                <div class="quota-progress-bar">
-                    <div class="quota-fill" id="quota-progress-fill" style="width: 0%;"></div>
-                </div>
-                <div class="quota-metrics">
-                    <span id="quota-used-text">0 KB</span>
-                    <span data-i18n="quota_of">of</span> <span id="quota-total-text">5 MB</span>
-                </div>
-            </div>
-        </aside>
+class StorageEngineCore {
+    constructor() {
+        this.storageKey = "nfc_go_vault_files";
+        this.maxQuotaBytes = 5 * 1024 * 1024; // 5 MB الافتراضية
+        this.files = this.loadFromStorage();
+        
+        // تشغيل فوري لتحديث المساحة والجدول أول ما الصفحة تفتح
+        setTimeout(() => {
+            this.updateQuotaUI();
+            this.renderNodes("all");
+        }, 300);
+    }
 
-        <main class="content-container" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
-            <header class="toolbar">
-                <div class="toolbar-brand-mobile">
-                    <i class="fa-solid fa-cube" style="color: var(--accent-color);"></i>
-                    <span>NFC GO</span>
-                </div>
-                <div class="toolbar-search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="dashboard-search" placeholder="Search files...">
-                </div>
-                <div class="toolbar-actions">
-                    <div class="mobile-quota-container" id="mobile-quota-trigger" style="cursor: pointer;">
-                        <div class="mobile-quota-bar">
-                            <div id="quota-progress-fill-mobile" style="width: 0%; height: 100%; background-color: var(--accent-color);"></div>
-                        </div>
-                        <span id="quota-used-text-mobile">0%</span>
-                    </div>
-                    <button type="button" class="theme-toggle-btn" id="theme-toggle-trigger">
-                        <i class="fa-solid fa-moon"></i>
-                    </button>
-                    <button type="button" class="lang-btn" id="lang-toggle-btn">
-                        <i class="fa-solid fa-text-width"></i>
-                        <span id="txt-lang-toggle">العربية</span>
-                    </button>
-                </div>
-            </header>
+    loadFromStorage() {
+        try {
+            const data = localStorage.getItem(this.storageKey);
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            return [];
+        }
+    }
 
-            <div class="explorer-viewport" style="flex: 1; overflow-y: auto;">
-                <div class="explorer-grid view-mode-grid" id="explorer-nodes-matrix">
-                    </div>
-            </div>
-        </main>
-    </div>
+    saveToStorage() {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.files));
+        this.updateQuotaUI();
+    }
 
-    <div class="mobile-bottom-nav">
-        <a href="#all" class="mobile-nav-link active">
-            <i class="fa-solid fa-folder"></i>
-            <span data-i18n="nav_all">All Files</span>
-        </a>
-        <a href="#images" class="mobile-nav-link">
-            <i class="fa-solid fa-image"></i>
-            <span data-i18n="nav_photos">Photos</span>
-        </a>
-        <div class="mobile-floating-action">
-            <label for="binary-file-injector" class="mobile-upload-trigger-circle" style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                <i class="fa-solid fa-plus"></i>
-            </label>
-        </div>
-        <a href="#videos" class="mobile-nav-link">
-            <i class="fa-solid fa-video"></i>
-            <span data-i18n="nav_videos">Videos</span>
-        </a>
-        <a href="#favorites" class="mobile-nav-link">
-            <i class="fa-solid fa-heart"></i>
-            <span data-i18n="nav_favs">Favorites</span>
-        </a>
-    </div>
+    handleUpload(fileList) {
+        Array.from(fileList).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fileObj = {
+                    id: "node_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: e.target.result, // تشفير الصورة بالكامل لحفظها حية
+                    date: new Date().toLocaleDateString()
+                };
+                
+                this.files.push(fileObj);
+                this.saveToStorage();
+                this.renderNodes("all");
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-    <input type="file" id="binary-file-injector" multiple>
+    filter(category) {
+        this.renderNodes(category);
+    }
 
-    <div class="upgrade-modal-backdrop hidden-modal" id="upgrade-panel-modal">
-        <div class="upgrade-card">
-            <button class="close-upgrade-btn" id="close-upgrade-modal">×</button>
-            <h3 data-i18n="up_title">Storage Upgrade</h3>
-            <p id="upgrade-status-text">You have used 0 KB of 5 MB available.</p>
-            <input type="text" class="upgrade-input" id="upgrade-code-input" placeholder="ENTER UPGRADE CODE">
-            <button class="btn-upgrade-submit" id="submit-upgrade-code" data-i18n="up_btn">Activate Code</button>
-            <a href="https://wa.me/201000000000?text=Hi%20NFC%20GO,%20I%20want%20to%20buy%20an%20upgrade%20code%20for%20my%20storage." target="_blank" class="btn-contact-support">
-                <i class="fa-brands fa-whatsapp"></i>
-                <span data-i18n="up_contact">Contact NFC GO Support</span>
-            </a>
-        </div>
-    </div>
+    getUsedBytes() {
+        return this.files.reduce((acc, f) => acc + f.size, 0);
+    }
 
-    <script>
-        // قاموس الترجمة الحقيقي المتكامل
-        const translations = {
-            en: {
-                logo: "NFC GO", upload_btn: "Upload File", nav_all: "All Files", nav_photos: "Photos",
-                nav_videos: "Videos", nav_favs: "Favorites", storage_title: "Storage", quota_of: "of",
-                up_title: "Storage Upgrade", up_btn: "Activate Code", up_contact: "Contact NFC GO Support"
-            },
-            ar: {
-                logo: "إن إف سي جو", upload_btn: "رفع ملف", nav_all: "كل الملفات", nav_photos: "الصور",
-                nav_videos: "الفيديو", nav_favs: "المفضلة", storage_title: "المساحة التخزينية", quota_of: "من",
-                up_title: "ترقية المساحة التخزينية", up_btn: "تفعيل الكود", up_contact: "تواصل مع دعم NFC GO"
-            }
-        };
+    updateQuotaUI() {
+        const usedBytes = this.getUsedBytes();
+        const pct = Math.min((usedBytes / this.maxQuotaBytes) * 100, 100).toFixed(1);
+        const usedKB = (usedBytes / 1024).toFixed(1);
 
-        function applyLanguage(lang) {
-            document.documentElement.setAttribute("lang", lang);
-            document.documentElement.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
-            document.getElementById("txt-lang-toggle").textContent = lang === "ar" ? "English" : "العربية";
-            
-            document.querySelectorAll("[data-i18n]").forEach(el => {
-                const key = el.getAttribute("data-i18n");
-                if (translations[lang][key]) el.textContent = translations[lang][key];
-            });
-            document.getElementById("dashboard-search").placeholder = lang === "ar" ? "بحث عن الملفات..." : "Search files...";
-            document.getElementById("upgrade-code-input").placeholder = lang === "ar" ? "أدخل كود الترقية هنا" : "ENTER UPGRADE CODE";
+        // تحديث العداد الجانبي والعلوي للموبايل
+        if(document.getElementById("quota-progress-fill")) document.getElementById("quota-progress-fill").style.width = `${pct}%`;
+        if(document.getElementById("quota-progress-fill-mobile")) document.getElementById("quota-progress-fill-mobile").style.width = `${pct}%`;
+        if(document.getElementById("quota-used-text")) document.getElementById("quota-used-text").textContent = `${usedKB} KB`;
+        if(document.getElementById("quota-used-text-mobile")) document.getElementById("quota-used-text-mobile").textContent = `${Math.round(pct)}%`;
+    }
+
+    renderNodes(category = "all") {
+        const matrix = document.getElementById("explorer-nodes-matrix");
+        if (!matrix) return;
+        matrix.innerHTML = "";
+
+        let filtered = this.files;
+        if (category === "images" || category === "photos") {
+            filtered = this.files.filter(f => f.type.startsWith("image/"));
+        } else if (category === "videos") {
+            filtered = this.files.filter(f => f.type.startsWith("video/"));
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            // تشغيل اللغة الافتراضية
-            let currentLang = localStorage.getItem("app-lang") || "en";
-            applyLanguage(currentLang);
+        if (filtered.length === 0) {
+            matrix.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; opacity:0.5;">No files found in this section.</div>`;
+            return;
+        }
 
-            document.getElementById("lang-toggle-btn").onclick = (e) => {
-                e.preventDefault();
-                currentLang = currentLang === "en" ? "ar" : "en";
-                localStorage.setItem("app-lang", currentLang);
-                applyLanguage(currentLang);
-            };
+        filtered.forEach(file => {
+            const card = document.createElement("div");
+            card.className = "file-card";
+            card.style = "background: var(--card-bg, #fff); padding: 15px; border-radius: 18px; border: 1px solid #eaeaea; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02);";
+            
+            // لو الملف صورة يعرضها مصغرة وجميلة جداً
+            let previewHTML = `<i class="fa-solid fa-file" style="font-size: 3rem; color:#aaa;"></i>`;
+            if (file.type.startsWith("image/")) {
+                previewHTML = `<img src="${file.data}" style="width:100%; height:120px; object-fit:contain; border-radius:12px; margin-bottom:10px;">`;
+            }
 
-            // تشغيل الدارك مود
-            const themeBtn = document.getElementById("theme-toggle-trigger");
-            const savedTheme = localStorage.getItem("app-theme") || "light";
-            document.documentElement.setAttribute("data-theme", savedTheme);
-            themeBtn.innerHTML = savedTheme === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
-            themeBtn.onclick = (e) => {
-                e.preventDefault();
-                const curr = document.documentElement.getAttribute("data-theme");
-                const target = curr === "dark" ? "light" : "dark";
-                document.documentElement.setAttribute("data-theme", target);
-                localStorage.setItem("app-theme", target);
-                themeBtn.innerHTML = target === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
-            };
-
-            // فتح وإغلاق نافذة الترقية عند الضغط على العدادات
-            const openUpgrade = () => {
-                document.getElementById("upgrade-panel-modal").classList.remove("hidden-modal");
-                // جلب المساحة الحية وتحديث نص النافذة
-                const usedTxt = document.getElementById("quota-used-text").textContent || "0 KB";
-                const totalTxt = document.getElementById("quota-total-text").textContent || "5 MB";
-                document.getElementById("upgrade-status-text").textContent = currentLang === "ar" ? `لقد استهلكت ${usedTxt} من إجمالي ${totalTxt}.` : `You have used ${usedTxt} of ${totalTxt} available.`;
-            };
-            document.getElementById("mobile-quota-trigger").onclick = openUpgrade;
-            document.getElementById("desktop-quota-trigger").onclick = openUpgrade;
-            document.getElementById("close-upgrade-modal").onclick = () => document.getElementById("upgrade-panel-modal").classList.add("hidden-modal");
-
-            // تفعيل كود الترقية
-            document.getElementById("submit-upgrade-code").onclick = () => {
-                const code = document.getElementById("upgrade-code-input").value.trim();
-                if(code === "NFC100" || code === "PREMIUM2026") {
-                    alert(currentLang === "ar" ? "تم تفعيل الكود بنجاح وترقية المساحة إلى 100 جيجابايت!" : "Code activated successfully! Storage upgraded to 100 GB!");
-                    document.getElementById("quota-total-text").textContent = "100 GB";
-                    document.getElementById("upgrade-panel-modal").classList.add("hidden-modal");
-                } else {
-                    alert(currentLang === "ar" ? "الكود غير صحيح! تواصل مع الدعم للحصول على كود مفعّل." : "Invalid code! Contact support to buy a valid upgrade code.");
-                }
-            };
-
-            // ربط التنقل السلس والفلترة
-            const links = document.querySelectorAll(".sidebar-nav .nav-link, .mobile-bottom-nav .mobile-nav-link");
-            links.forEach(link => {
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    const href = link.getAttribute("href");
-                    links.forEach(l => l.classList.remove("active"));
-                    links.forEach(l => { if (l.getAttribute("href") === href) l.classList.add("active"); });
-                    const cat = href.replace("#", "");
-                    if (window.StorageEngine && typeof window.StorageEngine.filter === "function") window.StorageEngine.filter(cat);
-                    else if (typeof window.filterFilesView === "function") window.filterFilesView(cat);
-                };
-            });
-
-            // تمرير الملف المرفوع لمحرك التخزين الفعلي الحقيقي الحين
-            document.getElementById("binary-file-injector").onchange = function(e) {
-                if (e.target.files.length === 0) return;
-                if (window.StorageEngine && typeof window.StorageEngine.handleUpload === "function") {
-                    window.StorageEngine.handleUpload(e.target.files);
-                }
-            };
+            card.innerHTML = `
+                ${previewHTML}
+                <div style="font-weight:bold; font-size:0.9rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:8px;">${file.name}</div>
+                <div style="font-size:0.8rem; opacity:0.6; margin-top:4px;">${(file.size / 1024).toFixed(1)} KB</div>
+            `;
+            matrix.appendChild(card);
         });
-    </script>
-    <script src="storage.js"></script>
-    <script src="auth.js"></script>
-    <script src="router.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+    }
+}
+
+// تصدير المحرك للنافذة العامة لربطه بملف الـ index الحين
+window.StorageEngine = new StorageEngineCore();
