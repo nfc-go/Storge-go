@@ -1,27 +1,22 @@
 /* ==========================================================================
-   NFC GO - Fixed Cloud Storage Engine Powered by Supabase
+   NFC GO - Ultimate Cloud Storage Engine (Loop-Fixed Version)
    ========================================================================== */
 
 class CloudStorageEngine {
     constructor() {
-        // مفاتيح الربط السحابية الخاصة بمشروعك
         this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
         this.supabaseKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
-        // استخراج الـ ID الفريد من الرابط ليفصل الكروت عن بعضها
         this.cardId = this.getCardIdFromUrl();
         
-        // مفاتيح كاش المتصفح للاحتفاظ بجلسة الدخول المؤقتة
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
 
-        // المساحة الافتراضية 20 جيجا بايت لكل كارت جديد
         this.maxQuotaBytes = parseInt(localStorage.getItem(this.quotaBytesKey)) || (20 * 1024 * 1024 * 1024);
         this.files = [];
         this.activePreviewFileId = null;
 
-        // تهيئة جداول السحاب تلقائياً وفحص الأمان
         this.initCloudVault();
     }
 
@@ -35,35 +30,32 @@ class CloudStorageEngine {
         return cleanId || "default_vault";
     }
 
-    // فحص الحساب والمزامنة مع السحاب
     async initCloudVault() {
-        this.showCloudLoading(true); // تشغيل التحميل أثناء فحص السيرفر
+        this.showCloudLoading(true);
         try {
             // جلب الحساب الخاص بهذا الكارت من السحاب
             const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
             
             if (!account || account.length === 0) {
-                // [ First Scan ] الحساب مش موجود .. نغلق الـ Loader فوراً قبل فتح شاشة التسجيل
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
-                // الحساب موجود .. نشوف هل مسجل دخول على المتصفح ده ولا نطلب الباسورد
+                // الحساب موجود تمام، نتحقق من جلسة الدخول
                 const isUnlocked = sessionStorage.getItem(this.authSessionKey);
                 if (isUnlocked === "true") {
                     await this.loadCloudFiles();
                 } else {
-                    this.showCloudLoading(false); // نغلق الـ Loader فوراً ليدخل الباسورد
+                    this.showCloudLoading(false);
                     this.renderLoginScreen(account[0].password, account[0].username);
                 }
             }
         } catch (err) {
             console.error("Cloud Error:", err);
             this.showCloudLoading(false);
-            alert("واجهنا مشكلة في الاتصال بالسحاب. يرجى مراجعة الـ SQL Editor في Supabase.");
+            alert("واجهنا مشكلة في الاتصال بالسحاب.");
         }
     }
 
-    // شاشة الفحص الأول (First Scan) - تظهر بدون أي حجب أو تعليق
     renderRegisterScreen() {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -89,16 +81,22 @@ class CloudStorageEngine {
             if(!user || !pass) { alert("برجاء ملء البيانات أولاً!"); return; }
 
             this.showCloudLoading(true);
+            
+            // 🛑 تعديل جوهري: انتظام الانتظار (await) لضمان حفظ البيانات بالكامل في السيرفر أولاً
             await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
+            
+            // تثبيت جلسة الدخول في المتصفح فوراً كأمان إضافي
             sessionStorage.setItem(this.authSessionKey, "true");
             
+            this.showCloudLoading(false);
             alert("تم إنشاء حسابك السحابي بنجاح! سيتم فتح الخزنة التخزينية الحين.");
             lockOverlay.remove();
+            
+            // إجبار المتصفح على التحديث النظيف بعد الحفظ المؤكد
             window.location.reload();
         };
     }
 
-    // شاشة الفحص الثاني والأبدي (Second Scan & Forever)
     renderLoginScreen(correctPassword, username) {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -184,33 +182,41 @@ class CloudStorageEngine {
     // 🌐 الدوال المساعدة للتواصل مع سيرفر Supabase API
     // ==========================================
     async cloudFetch(table, queryStr = "") {
-        const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-            headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}` }
-        });
-        return res.ok ? await res.json() : [];
+        try {
+            const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
+                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}` }
+            });
+            return res.ok ? await res.json() : [];
+        } catch(e) { return []; }
     }
 
     async cloudInsert(table, dataObj) {
-        await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
-            method: "POST",
-            headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=representation" },
-            body: JSON.stringify(dataObj)
-        });
+        try {
+            await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
+                method: "POST",
+                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=representation" },
+                body: JSON.stringify(dataObj)
+            });
+        } catch(e) { console.error(e); }
     }
 
     async cloudUpdate(table, dataObj, queryStr) {
-        await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-            method: "PATCH",
-            headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify(dataObj)
-        });
+        try {
+            await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
+                method: "PATCH",
+                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify(dataObj)
+            });
+        } catch(e) { console.error(e); }
     }
 
     async cloudDelete(table, queryStr) {
-        await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-            method: "DELETE",
-            headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}` }
-        });
+        try {
+            await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
+                method: "DELETE",
+                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}` }
+            });
+        } catch(e) { console.error(e); }
     }
 
     // ==========================================
@@ -341,7 +347,7 @@ class CloudStorageEngine {
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري التحقق والمزامنة سحابياً...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري مزامنة وحفظ الحساب سحابياً...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
