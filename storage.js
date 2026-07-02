@@ -3,13 +3,14 @@
    ========================================================================== */
 
 class CloudStorageEngine {
-    constructor() {
-        this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
-        this.supabaseKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
+        constructor() {
+        // ⚠️ حط الرابط الجديد اللي نسخته هنا مكان القديم ده
+        this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co/rest/v1/";
+        
+        // ⚠️ حط المفتاح (anon public key) الجديد بالكامل هنا
+        this.supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
         this.cardId = this.getCardIdFromUrl();
-        console.log("[NFC GO] Card ID:", this.cardId);
-        
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
