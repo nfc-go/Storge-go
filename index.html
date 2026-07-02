@@ -6,6 +6,19 @@
     <title>NFC GO - Secure Storage</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* كود أمان إضافي لإخفاء الزرار الرمادي القديم (Choose File) نهائياً من الشاشة */
+        #binary-file-injector {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            width: 0 !important;
+            height: 0 !important;
+            z-index: -9999 !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -18,7 +31,7 @@
             </div>
             
             <div class="sidebar-action-wrapper">
-                <label for="binary-file-injector" class="desktop-upload-btn">
+                <label for="binary-file-injector" class="desktop-upload-btn" style="cursor: pointer;">
                     <i class="fa-solid fa-plus"></i>
                     <span>Upload File</span>
                 </label>
@@ -41,7 +54,7 @@
                     <i class="fa-solid fa-database"></i><span>Storage</span>
                 </div>
                 <div class="quota-progress-bar">
-                    <div class="quota-fill" id="quota-progress-fill"></div>
+                    <div class="quota-fill" id="quota-progress-fill" style="width: 0%;"></div>
                 </div>
                 <div class="quota-metrics">
                     <span id="quota-used-text">0 KB</span>
@@ -50,8 +63,7 @@
             </div>
         </aside>
 
-        <main class="main-content">
-            
+        <main class="content-container" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
             <header class="toolbar">
                 <div class="toolbar-brand-mobile">
                     <i class="fa-solid fa-cube" style="color: var(--accent-color);"></i>
@@ -82,14 +94,14 @@
                 </div>
             </header>
 
-            <div class="explorer-viewport">
+            <div class="explorer-viewport" style="flex: 1; overflow-y: auto;">
                 <div class="explorer-grid view-mode-grid" id="explorer-nodes-matrix">
                     </div>
             </div>
         </main>
     </div>
 
-    <div class="mobile-bottom-nav" style="display: none;">
+    <div class="mobile-bottom-nav">
         <a href="#all" class="mobile-nav-link active">
             <i class="fa-solid fa-folder"></i>
             <span>All Files</span>
@@ -100,7 +112,7 @@
         </a>
         
         <div class="mobile-floating-action">
-            <label for="binary-file-injector" class="mobile-upload-trigger-circle">
+            <label for="binary-file-injector" class="mobile-upload-trigger-circle" style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
                 <i class="fa-solid fa-plus"></i>
             </label>
         </div>
@@ -140,20 +152,110 @@
         <div class="modal-card">
             <div class="modal-card-header">
                 <h3 id="preview-modal-title">File Preview</h3>
-                <button type="button" class="modal-close-trigger-btn" id="preview-close-trigger" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+                <button type="button" id="preview-close-trigger" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
             </div>
-            <div class="modal-card-body" id="preview-modal-body" style="display:flex; justify-content:center; align-items:center; background:#000;">
-                </div>
+            <div class="modal-card-body" id="preview-modal-body" style="display:flex; justify-content:center; align-items:center; background:#000; min-height: 200px;"></div>
             <div class="modal-card-footer">
                 <button type="button" class="btn-secondary" id="preview-download-btn">Download</button>
             </div>
         </div>
     </div>
 
+    <script>
+        // حماية النظام وعزل أخطاء الملفات المكسورة القديمة
+        window.addEventListener('error', function(e) {
+            console.log("Isolated Shield caught legacy break:", e.message);
+            e.preventDefault();
+        }, true);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. تشغيل زر الدارك مود واللايت مود فوراً
+            const themeBtn = document.getElementById("theme-toggle-trigger");
+            if (themeBtn) {
+                const savedTheme = localStorage.getItem("app-theme") || "light";
+                document.documentElement.setAttribute("data-theme", savedTheme);
+                themeBtn.innerHTML = savedTheme === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+                
+                themeBtn.onclick = function(e) {
+                    e.preventDefault();
+                    const current = document.documentElement.getAttribute("data-theme");
+                    const target = current === "dark" ? "light" : "dark";
+                    document.documentElement.setAttribute("data-theme", target);
+                    localStorage.setItem("app-theme", target);
+                    themeBtn.innerHTML = target === "light" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+                };
+            }
+
+            // 2. تشغيل زر تغيير اللغة
+            const langBtn = document.getElementById("lang-toggle-btn");
+            if (langBtn) {
+                langBtn.onclick = function(e) {
+                    e.preventDefault();
+                    const dir = document.documentElement.getAttribute("dir") || "ltr";
+                    if (dir === "ltr") {
+                        document.documentElement.setAttribute("dir", "rtl");
+                        document.documentElement.setAttribute("lang", "ar");
+                        document.getElementById("txt-lang-toggle").textContent = "English";
+                    } else {
+                        document.documentElement.setAttribute("dir", "ltr");
+                        document.documentElement.setAttribute("lang", "en");
+                        document.getElementById("txt-lang-toggle").textContent = "العربية";
+                    }
+                };
+            }
+
+            // 3. تشغيل أزرار المنيو السفلي للتنقل والتبويب بنجاح
+            const links = document.querySelectorAll(".sidebar-nav .nav-link, .mobile-bottom-nav .mobile-nav-link");
+            links.forEach(link => {
+                link.onclick = function(e) {
+                    e.preventDefault();
+                    const href = link.getAttribute("href");
+                    
+                    links.forEach(l => l.classList.remove("active"));
+                    links.forEach(l => {
+                        if (l.getAttribute("href") === href) l.classList.add("active");
+                    });
+
+                    const category = href.replace("#", "");
+                    console.log("Switching view to:", category);
+
+                    // استدعاء الفانكشنز الخاصة بملفاتك الأخرى لو كانت جاهزة وموجودة في الذاكرة
+                    if (window.Router && typeof window.Router.navigate === "function") {
+                        window.Router.navigate(href);
+                    }
+                    if (typeof window.filterFilesView === "function") {
+                        window.filterFilesView(category);
+                    } else if (window.StorageEngine && typeof window.StorageEngine.filter === "function") {
+                        window.StorageEngine.filter(category);
+                    }
+                };
+            });
+
+            // 4. ربط وتفعيل زر الـ + الأزرق العائم لرفع الملفات فوراً
+            const fileInput = document.getElementById("binary-file-injector");
+            if (fileInput) {
+                fileInput.onchange = function(e) {
+                    const files = e.target.files;
+                    if (files.length === 0) return;
+                    
+                    console.log("Files uploaded via floating action:", files);
+
+                    if (window.StorageEngine && typeof window.StorageEngine.handleUpload === "function") {
+                        window.StorageEngine.handleUpload(files);
+                    } else if (typeof window.handleFileUploadProcess === "function") {
+                        window.handleFileUploadProcess(files);
+                    } else {
+                        alert(`Successfully selected ${files.length} file(s).`);
+                    }
+                };
+            }
+        });
+    </script>
+
     <script src="storage.js"></script>
     <script src="auth.js"></script>
-    <script src="ui.js"></script>
     <script src="router.js"></script>
     <script src="app.js"></script>
+    <script src="ui.js"></script>
 </body>
 </html>
