@@ -1,13 +1,10 @@
 /* ==========================================================================
-   NFC GO - Cloud Storage Engine (Instant Unlock - No Refresh Version)
+   NFC GO - Cloud Storage Engine (Ultimate DB Overlord Fix)
    ========================================================================== */
 
 class CloudStorageEngine {
-        constructor() {
-        // ⚠️ حط الرابط الجديد اللي نسخته هنا مكان القديم ده
-        this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co/rest/v1/";
-        
-        // ⚠️ حط المفتاح (anon public key) الجديد بالكامل هنا
+    constructor() {
+        this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
         this.supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
         this.cardId = this.getCardIdFromUrl();
@@ -25,7 +22,6 @@ class CloudStorageEngine {
     getCardIdFromUrl() {
         const hash = window.location.hash;
         let cleanId = "";
-
         if (hash && hash.includes("#/") && hash !== "#/all" && hash !== "#/images" && hash !== "#/videos" && hash !== "#/favorites") {
             cleanId = hash.replace("#/", "").split("?")[0].split("/")[0];
             if (cleanId) {
@@ -33,10 +29,8 @@ class CloudStorageEngine {
                 return cleanId;
             }
         }
-
         const savedId = localStorage.getItem("nfc_saved_card_id");
         if (savedId) return savedId;
-
         return "default_vault";
     }
 
@@ -72,40 +66,35 @@ class CloudStorageEngine {
         
         lockOverlay.innerHTML = `
             <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size:3.5rem; color:#007bff; margin-bottom:15px;"></i>
+                <i class="fa-solid fa-database" style="font-size:3.5rem; color:#007bff; margin-bottom:15px;"></i>
                 <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO Cloud - إعداد الحساب</h2>
                 <p style="font-size:0.85rem; color:#aaa; margin-bottom:5px;">رقم الكارت: <span style="color:#007bff; font-weight:bold;">${this.cardId}</span></p>
-                <p style="font-size:0.85rem; color:#aaa; margin-bottom:20px;">الفحص الأول: اختر اسم مستخدم وباسورد لحفظ ملفاتك سحابياً مدى الحياة.</p>
                 <form id="nfc-reg-form" onsubmit="return false;">
                     <input type="text" id="reg-username" placeholder="اسم المستخدم" required style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
                     <input type="password" id="reg-password" placeholder="كلمة المرور السرية" required style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                    <button type="button" id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">إنشاء الحساب السحابي</button>
+                    <button type="button" id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">إنشاء الحساب في الداتابيز</button>
                 </form>
             </div>
         `;
         document.body.appendChild(lockOverlay);
 
         document.getElementById("btn-save-account").onclick = async (e) => {
-            if(e) e.preventDefault(); 
-
             const user = document.getElementById("reg-username").value.trim();
             const pass = document.getElementById("reg-password").value.trim();
             if(!user || !pass) { alert("برجاء ملء البيانات أولاً!"); return; }
 
             this.showCloudLoading(true);
-            
-            // رفع الحساب للسيرفر
-            await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
-            
-            // حفظ الدخول محلياً
-            sessionStorage.setItem(this.authSessionKey, "true");
+            const success = await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
             
             this.showCloudLoading(false);
-            alert("تم إنشاء حسابك السحابي بنجاح! يتم الآن فتح الخزنة مباشرة...");
-            
-            // 🌟 التعديل السحري: إخفاء الشاشة فوراً وتحميل لوحة التحكم بدون ريفريش
-            lockOverlay.remove(); 
-            await this.loadCloudFiles(); 
+            if(success) {
+                sessionStorage.setItem(this.authSessionKey, "true");
+                alert("تم الحفظ في الداتابيز بنجاح!");
+                lockOverlay.remove();
+                window.location.reload();
+            } else {
+                alert("فشل الربط! السيرفر رفض تخزين البيانات، تأكد من كود الـ SQL Editor.");
+            }
         };
     }
 
@@ -118,10 +107,10 @@ class CloudStorageEngine {
         lockOverlay.innerHTML = `
             <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
                 <i class="fa-solid fa-lock" style="font-size:3.5rem; color:#dc3545; margin-bottom:15px;"></i>
-                <h2 style="margin:0 0 10px; font-size:1.4rem;">خزنة NFC GO السحابية</h2>
+                <h2 style="margin:0 0 10px; font-size:1.4rem;">خزنة NFC GO - تسجيل دخول</h2>
                 <p style="font-size:0.85rem; color:#aaa; margin-bottom:20px;">مرحباً بك يا <span style="color:#28a745; font-weight:bold;">${username}</span>، اكتب الباسورد لفتح ملفاتك.</p>
                 <input type="password" id="login-password" placeholder="اكتب كلمة المرور هنا" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center; font-size:1.2rem; letter-spacing:2px;">
-                <button id="btn-unlock-vault" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">فتح ملفاتي السحابية</button>
+                <button id="btn-unlock-vault" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">فتح الخزنة</button>
             </div>
         `;
         document.body.appendChild(lockOverlay);
@@ -190,10 +179,16 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
+    /* 🔐 السحر هنا: الدالتين دول تم تظبيط الـ Headers والـ Payload فيهم إجبارياً للـ Supabase */
     async cloudFetch(table, queryStr = "") {
         try {
             const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}` }
+                method: "GET",
+                headers: { 
+                    "apikey": this.supabaseKey, 
+                    "Authorization": `Bearer ${this.supabaseKey}`,
+                    "Content-Type": "application/json"
+                }
             });
             return res.ok ? await res.json() : [];
         } catch(e) { return []; }
@@ -201,7 +196,7 @@ class CloudStorageEngine {
 
     async cloudInsert(table, dataObj) {
         try {
-            await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
+            const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
                 method: "POST",
                 headers: { 
                     "apikey": this.supabaseKey, 
@@ -209,16 +204,21 @@ class CloudStorageEngine {
                     "Content-Type": "application/json",
                     "Prefer": "return=minimal"
                 },
-                body: JSON.stringify(dataObj)
+                body: JSON.stringify([dataObj]) // ⚠️ التعديل الجوهري: إرسال البيانات داخل مصفوفة [] لإجبار الـ API على القبول
             });
-        } catch(e) { console.error("[NFC GO] Insert Error:", e); }
+            return res.ok;
+        } catch(e) { return false; }
     }
 
     async cloudUpdate(table, dataObj, queryStr) {
         try {
             await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
                 method: "PATCH",
-                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}`, "Content-Type": "application/json" },
+                headers: { 
+                    "apikey": this.supabaseKey, 
+                    "Authorization": `Bearer ${this.supabaseKey}`, 
+                    "Content-Type": "application/json" 
+                },
                 body: JSON.stringify(dataObj)
             });
         } catch(e) { console.error(e); }
@@ -228,7 +228,10 @@ class CloudStorageEngine {
         try {
             await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
                 method: "DELETE",
-                headers: { "apikey": this.supabaseKey, "Authorization": `Bearer ${this.supabaseKey}` }
+                headers: { 
+                    "apikey": this.supabaseKey, 
+                    "Authorization": `Bearer ${this.supabaseKey}` 
+                }
             });
         } catch(e) { console.error(e); }
     }
@@ -244,7 +247,7 @@ class CloudStorageEngine {
 
         if(document.getElementById("quota-progress-fill")) document.getElementById("quota-progress-fill").style.width = `${pct}%`;
         if(document.getElementById("quota-progress-fill-mobile")) document.getElementById("quota-progress-fill-mobile").style.width = `${pct}%`;
-        if(document.getElementById("quota-used-text")) document.getElementById("quota-used-text").textContent = usedKB > 1024 ? `${(usedKB/1024).toFixed(1)} MB` : `${usedKB} KB`;
+        if(document.getElementById("quota-used-text")) document.getElementById("quota-used-text").textContent = usedBytes > 1048576 ? `${(usedBytes/1048576).toFixed(1)} MB` : `${usedKB} KB`;
         if(document.getElementById("quota-used-text-mobile")) document.getElementById("quota-used-text-mobile").textContent = `${Math.round(pct)}%`;
         if(document.getElementById("quota-total-text")) document.getElementById("quota-total-text").textContent = currentLabel;
     }
@@ -358,7 +361,7 @@ class CloudStorageEngine {
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري مزامنة وفتح الخزنة السحابية...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري الاتصال بقاعدة البيانات...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
