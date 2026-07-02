@@ -1,26 +1,23 @@
 /* ==========================================================================
-   NFC GO - Ultimate Cloud Storage Engine (Complete & Fixed Version)
+   NFC GO - Cloud Storage Engine (Prevent Default Reset Version)
    ========================================================================== */
 
 class CloudStorageEngine {
     constructor() {
-        // مفاتيح الربط السحابية الخاصة بمشروعك على Supabase
         this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
         this.supabaseKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
-        // لقط الـ ID وحفظه في الذاكرة لضمان عدم ضياعه بعد الريفريش
         this.cardId = this.getCardIdFromUrl();
+        console.log("[NFC GO] Current Card ID Detected:", this.cardId);
         
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
 
-        // المساحة الافتراضية 20 جيجا بايت لكل كارت جديد
         this.maxQuotaBytes = parseInt(localStorage.getItem(this.quotaBytesKey)) || (20 * 1024 * 1024 * 1024);
         this.files = [];
         this.activePreviewFileId = null;
 
-        // تهيئة جداول السحاب تلقائياً وفحص الأمان
         this.initCloudVault();
     }
 
@@ -28,54 +25,47 @@ class CloudStorageEngine {
         const hash = window.location.hash;
         let cleanId = "";
 
-        // لو الرابط فيه الهاش والـ ID، نلقطه فوراً ونخزنه
         if (hash && hash.includes("#/") && hash !== "#/all" && hash !== "#/images" && hash !== "#/videos" && hash !== "#/favorites") {
             cleanId = hash.replace("#/", "").split("?")[0].split("/")[0];
             if (cleanId) {
-                localStorage.setItem("nfc_saved_card_id", cleanId); // حفظ أبدي في الجهاز
+                localStorage.setItem("nfc_saved_card_id", cleanId);
                 return cleanId;
             }
         }
 
-        // لو مفيش هاش (زي بعد الريفريش)، بنجيبه من الذاكرة اللي حفظناها قبل كدة
         const savedId = localStorage.getItem("nfc_saved_card_id");
-        if (savedId) {
-            return savedId;
-        }
+        if (savedId) return savedId;
 
-        // كحل أخير لو أول مرة يفتح خالص بدون رابط مخصص
         return "default_vault";
     }
 
-    // فحص الحساب والمزامنة مع السحاب
     async initCloudVault() {
-        this.showCloudLoading(true); // تشغيل التحميل أثناء فحص السيرفر
+        this.showCloudLoading(true);
         try {
-            // جلب الحساب الخاص بهذا الكارت من السحاب
+            console.log("[NFC GO] Checking account on Supabase...");
             const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
             
             if (!account || account.length === 0) {
-                // الحساب مش موجود .. نغلق الـ Loader فوراً قبل فتح شاشة التسجيل
+                console.log("[NFC GO] No account found. Opening Registration Screen.");
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
-                // الحساب موجود .. نشوف هل مسجل دخول على المتصفح ده ولا نطلب الباسورد
+                console.log("[NFC GO] Account found! Checking session...");
                 const isUnlocked = sessionStorage.getItem(this.authSessionKey);
                 if (isUnlocked === "true") {
                     await this.loadCloudFiles();
                 } else {
-                    this.showCloudLoading(false); // نغلق الـ Loader فوراً ليدخل الباسورد
+                    this.showCloudLoading(false);
                     this.renderLoginScreen(account[0].password, account[0].username);
                 }
             }
         } catch (err) {
-            console.error("Cloud Error:", err);
+            console.error("[NFC GO] Init Error:", err);
             this.showCloudLoading(false);
-            this.renderRegisterScreen(); // كخطوة أمان لو السيرفر اتأخر افتح التسجيل
+            this.renderRegisterScreen();
         }
     }
 
-    // شاشة الفحص الأول (First Scan)
     renderRegisterScreen() {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -88,36 +78,44 @@ class CloudStorageEngine {
                 <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO Cloud - إعداد الحساب</h2>
                 <p style="font-size:0.85rem; color:#aaa; margin-bottom:5px;">رقم الكارت: <span style="color:#007bff; font-weight:bold;">${this.cardId}</span></p>
                 <p style="font-size:0.85rem; color:#aaa; margin-bottom:20px;">الفحص الأول: اختر اسم مستخدم وباسورد لحفظ ملفاتك سحابياً مدى الحياة.</p>
-                <input type="text" id="reg-username" placeholder="اسم المستخدم" style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                <input type="password" id="reg-password" placeholder="كلمة المرور السرية" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                <button id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">إنشاء الحساب السحابي</button>
+                <form id="nfc-reg-form" onsubmit="return false;">
+                    <input type="text" id="reg-username" placeholder="اسم المستخدم" required style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                    <input type="password" id="reg-password" placeholder="كلمة المرور السرية" required style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                    <button type="button" id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">إنشاء الحساب السحابي</button>
+                </form>
             </div>
         `;
         document.body.appendChild(lockOverlay);
 
-        document.getElementById("btn-save-account").onclick = async () => {
+        document.getElementById("btn-save-account").onclick = async (e) => {
+            // 🛑 منع أي سلوك افتراضي للمتصفح قد يسبب عمل ريفريش تلقائي
+            if(e) e.preventDefault(); 
+
             const user = document.getElementById("reg-username").value.trim();
             const pass = document.getElementById("reg-password").value.trim();
             if(!user || !pass) { alert("برجاء ملء البيانات أولاً!"); return; }
 
+            console.log("[NFC GO] Registering user:", user);
             this.showCloudLoading(true);
             
-            // إرسال مباشر وسريع للسيرفر
+            // إرسال البيانات للسيرفر أولاً والانتظار تماماً
             await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
             
-            // حفظ الجلسة محلياً فوراً لتخطي الحلقات المفرغة
+            // حفظ الدخول في الذاكرة المؤقتة والدائمة لضمان عدم الرجوع للتسجيل
             sessionStorage.setItem(this.authSessionKey, "true");
+            localStorage.setItem(`nfc_backup_auth_${this.cardId}`, "true");
             
+            console.log("[NFC GO] Account created successfully. Preparing redirect...");
             this.showCloudLoading(false);
+            
             alert("تم إنشاء حسابك السحابي بنجاح! جاري تحويلك للخزنة التخزينية...");
             lockOverlay.remove();
             
-            // تحويل فوري وآمن
+            // تحديث آمن ومضمون بدون فقدان البيانات
             window.location.reload();
         };
     }
 
-    // شاشة طلب كلمة المرور (الحساب موجود بالفعل)
     renderLoginScreen(correctPassword, username) {
         this.removeExistingOverlay();
         const lockOverlay = document.createElement("div");
@@ -150,7 +148,6 @@ class CloudStorageEngine {
         document.getElementById("login-password").onkeydown = (e) => { if(e.key === "Enter") checkUnlock(); };
     }
 
-    // جلب الملفات المخزنة من السحاب
     async loadCloudFiles() {
         this.showCloudLoading(true);
         const fetched = await this.cloudFetch('vault_files', `card_id=eq.${this.cardId}`);
@@ -160,7 +157,6 @@ class CloudStorageEngine {
         this.showCloudLoading(false);
     }
 
-    // رفع الملفات سحابياً
     async handleUpload(fileList) {
         this.showCloudLoading(true);
         for (let file of Array.from(fileList)) {
@@ -186,7 +182,6 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
-    // إضافة أو إزالة من المفضلة
     async toggleFavoriteCloud(fileId, currentStatus) {
         this.showCloudLoading(true);
         await this.cloudUpdate('vault_files', { is_favorite: !currentStatus }, `and=(card_id.eq.${this.cardId},file_id.eq.${fileId})`);
@@ -194,7 +189,6 @@ class CloudStorageEngine {
         this.openFilePreview(fileId);
     }
 
-    // حذف ملف نهائياً من السحاب
     async deleteFileCloud(fileId) {
         this.showCloudLoading(true);
         await this.cloudDelete('vault_files', `and=(card_id.eq.${this.cardId},file_id.eq.${fileId})`);
@@ -203,9 +197,6 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
-    // ==========================================================================
-    // 🌐 الدوال الأساسية للاتصال بـ Supabase API REST
-    // ==========================================================================
     async cloudFetch(table, queryStr = "") {
         try {
             const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
@@ -222,11 +213,12 @@ class CloudStorageEngine {
                 headers: { 
                     "apikey": this.supabaseKey, 
                     "Authorization": `Bearer ${this.supabaseKey}`, 
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
                 },
                 body: JSON.stringify(dataObj)
             });
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error("[NFC GO] Insert Error:", e); }
     }
 
     async cloudUpdate(table, dataObj, queryStr) {
@@ -248,9 +240,6 @@ class CloudStorageEngine {
         } catch(e) { console.error(e); }
     }
 
-    // ==========================================================================
-    // ⚙️ دوال التحكم بالواجهة الرسومية وعرض البيانات (UI)
-    // ==========================================================================
     filter(category) { this.renderNodes(category); }
     getUsedBytes() { return this.files.reduce((acc, f) => acc + f.size, 0); }
 
