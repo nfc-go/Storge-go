@@ -1,5 +1,5 @@
 /* ==========================================================================
-   NFC GO - Cloud Storage Engine (Prevent Default Reset Version)
+   NFC GO - Cloud Storage Engine (Instant Unlock - No Refresh Version)
    ========================================================================== */
 
 class CloudStorageEngine {
@@ -8,7 +8,7 @@ class CloudStorageEngine {
         this.supabaseKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
 
         this.cardId = this.getCardIdFromUrl();
-        console.log("[NFC GO] Current Card ID Detected:", this.cardId);
+        console.log("[NFC GO] Card ID:", this.cardId);
         
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
@@ -42,15 +42,12 @@ class CloudStorageEngine {
     async initCloudVault() {
         this.showCloudLoading(true);
         try {
-            console.log("[NFC GO] Checking account on Supabase...");
             const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
             
             if (!account || account.length === 0) {
-                console.log("[NFC GO] No account found. Opening Registration Screen.");
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
-                console.log("[NFC GO] Account found! Checking session...");
                 const isUnlocked = sessionStorage.getItem(this.authSessionKey);
                 if (isUnlocked === "true") {
                     await this.loadCloudFiles();
@@ -88,31 +85,26 @@ class CloudStorageEngine {
         document.body.appendChild(lockOverlay);
 
         document.getElementById("btn-save-account").onclick = async (e) => {
-            // 🛑 منع أي سلوك افتراضي للمتصفح قد يسبب عمل ريفريش تلقائي
             if(e) e.preventDefault(); 
 
             const user = document.getElementById("reg-username").value.trim();
             const pass = document.getElementById("reg-password").value.trim();
             if(!user || !pass) { alert("برجاء ملء البيانات أولاً!"); return; }
 
-            console.log("[NFC GO] Registering user:", user);
             this.showCloudLoading(true);
             
-            // إرسال البيانات للسيرفر أولاً والانتظار تماماً
+            // رفع الحساب للسيرفر
             await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
             
-            // حفظ الدخول في الذاكرة المؤقتة والدائمة لضمان عدم الرجوع للتسجيل
+            // حفظ الدخول محلياً
             sessionStorage.setItem(this.authSessionKey, "true");
-            localStorage.setItem(`nfc_backup_auth_${this.cardId}`, "true");
             
-            console.log("[NFC GO] Account created successfully. Preparing redirect...");
             this.showCloudLoading(false);
+            alert("تم إنشاء حسابك السحابي بنجاح! يتم الآن فتح الخزنة مباشرة...");
             
-            alert("تم إنشاء حسابك السحابي بنجاح! جاري تحويلك للخزنة التخزينية...");
-            lockOverlay.remove();
-            
-            // تحديث آمن ومضمون بدون فقدان البيانات
-            window.location.reload();
+            // 🌟 التعديل السحري: إخفاء الشاشة فوراً وتحميل لوحة التحكم بدون ريفريش
+            lockOverlay.remove(); 
+            await this.loadCloudFiles(); 
         };
     }
 
@@ -365,7 +357,7 @@ class CloudStorageEngine {
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري المزامنة والاتصال بالسحاب...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري مزامنة وفتح الخزنة السحابية...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
