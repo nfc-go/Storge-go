@@ -1,15 +1,14 @@
 /* ==========================================================================
-   NebulaDrive / NFC GO - Professional Storage Engine Core (With Modal Actions)
+   NebulaDrive / NFC GO - Professional Storage Engine Core
    ========================================================================== */
 
 class StorageEngineCore {
     constructor() {
         this.storageKey = "nfc_go_vault_files";
-        this.maxQuotaBytes = 5 * 1024 * 1024; // 5 MB الافتراضية
+        this.maxQuotaBytes = 5 * 1024 * 1024;
         this.files = this.loadFromStorage();
-        this.activePreviewFileId = null; // لمتابعة الملف المفتوح حالياً في المعاينة
+        this.activePreviewFileId = null;
         
-        // تشغيل فوري لتحديث المساحة والجدول أول ما الصفحة تفتح
         setTimeout(() => {
             this.updateQuotaUI();
             this.renderNodes("all");
@@ -41,7 +40,7 @@ class StorageEngineCore {
                     size: file.size,
                     type: file.type,
                     data: e.target.result, 
-                    isFavorite: false, // 💡 تعديل هام: الملف ينزل غير مفضل افتراضياً بناء على طلبك
+                    isFavorite: false, 
                     date: new Date().toLocaleDateString()
                 };
                 
@@ -72,7 +71,6 @@ class StorageEngineCore {
         if(document.getElementById("quota-used-text-mobile")) document.getElementById("quota-used-text-mobile").textContent = `${Math.round(pct)}%`;
     }
 
-    // فتح نافذة المعاينة الكبيرة للملف المختار عند الضغط عليه
     openFilePreview(fileId) {
         const file = this.files.find(f => f.id === fileId);
         if (!file) return;
@@ -80,10 +78,8 @@ class StorageEngineCore {
         this.activePreviewFileId = fileId;
         const currentLang = document.documentElement.getAttribute("lang") || "en";
 
-        // تحديث عنوان المعاينة باسم الملف
         document.getElementById("preview-modal-title").textContent = file.name;
 
-        // إدخال ميديا العرض (صورة أو أيقونة فيديو)
         const body = document.getElementById("preview-modal-body");
         body.innerHTML = "";
         if (file.type.startsWith("image/")) {
@@ -94,36 +90,31 @@ class StorageEngineCore {
             body.innerHTML = `<i class="fa-solid fa-file" style="font-size: 5rem; color:#fff;"></i>`;
         }
 
-        // تحديث حالة وشكل زر المفضلة بناء على حالة الملف الحالية
         const favBtn = document.getElementById("action-fav-btn");
         const favTxt = document.getElementById("txt-fav-btn");
         if (file.isFavorite) {
             favBtn.classList.add("is-active");
-            favTxt.textContent = currentLang === "ar" ? "مفضّل مسبقاً" : "Favorited";
+            favTxt.textContent = currentLang === "ar" ? "إلغاء المفضلة" : "Remove Favorite";
         } else {
             favBtn.classList.remove("is-active");
             favTxt.textContent = currentLang === "ar" ? "إضافة للمفضلة" : "Favorite";
         }
 
-        // إظهار المودال بالكامل على الشاشة
         document.getElementById("media-preview-modal").classList.remove("hidden-modal");
     }
 
-    // ربط أكواد الضغط لأزرار التحكم الثلاثة داخل نافذة المعاينة
     bindModalActionButtons() {
-        // 1. زر تحويل حالة المفضلة (Favorite Toggle)
         document.getElementById("action-fav-btn").onclick = () => {
             if (!this.activePreviewFileId) return;
             const file = this.files.find(f => f.id === this.activePreviewFileId);
             if (file) {
-                file.isFavorite = !file.isFavorite; // عكس الحالة الحالية
+                file.isFavorite = !file.isFavorite;
                 this.saveToStorage();
-                this.openFilePreview(this.activePreviewFileId); // إعادة إنعاش الشكل للزرار
-                this.renderNodes(window.currentCategoryView || "all"); // تحديث الجريد بالخلفية
+                this.openFilePreview(this.activePreviewFileId);
+                this.renderNodes(window.currentCategoryView || "all");
             }
         };
 
-        // 2. زر التحميل الحقيقي الفوري للكمبيوتر والموبايل (Download)
         document.getElementById("action-download-btn").onclick = () => {
             if (!this.activePreviewFileId) return;
             const file = this.files.find(f => f.id === this.activePreviewFileId);
@@ -137,7 +128,6 @@ class StorageEngineCore {
             }
         };
 
-        // 3. زر الحذف الفوري والكامل من التخزين (Delete)
         document.getElementById("action-delete-btn").onclick = () => {
             if (!this.activePreviewFileId) return;
             const currentLang = document.documentElement.getAttribute("lang") || "en";
@@ -146,9 +136,9 @@ class StorageEngineCore {
             if (confirm(confirmMsg)) {
                 this.files = this.files.filter(f => f.id !== this.activePreviewFileId);
                 this.saveToStorage();
-                document.getElementById("media-preview-modal").classList.add("hidden-modal"); // إغلاق النافذة
+                document.getElementById("media-preview-modal").classList.add("hidden-modal");
                 this.activePreviewFileId = null;
-                this.renderNodes(window.currentCategoryView || "all"); // تحديث الجريد الحية
+                this.renderNodes(window.currentCategoryView || "all");
             }
         };
     }
@@ -161,18 +151,17 @@ class StorageEngineCore {
         let filtered = this.files;
         const currentLang = document.documentElement.getAttribute("lang") || "en";
 
-        // فلترة دقيقة بناء على الفئة المختارة
         if (category === "images" || category === "photos") {
             filtered = this.files.filter(f => f.type.startsWith("image/"));
         } else if (category === "videos") {
             filtered = this.files.filter(f => f.type.startsWith("video/"));
         } else if (category === "favorites") {
-            filtered = this.files.filter(f => f.isFavorite === true); // 💡 يعرض فقط من قمت بتمييزهم يدوياً
+            filtered = this.files.filter(f => f.isFavorite === true);
         }
 
         if (filtered.length === 0) {
             const noFilesText = currentLang === "ar" ? "لا توجد ملفات في هذا القسم حالياً." : "No files found in this section.";
-            matrix.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; opacity:0.5; font-weight:bold;">${noFilesText}</div>`;
+            matrix.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; opacity:0.5; font-weight:bold; color: var(--text-color);">${noFilesText}</div>`;
             return;
         }
 
@@ -181,7 +170,6 @@ class StorageEngineCore {
             card.className = "file-card";
             card.style = "background: var(--card-bg, #fff); padding: 15px; border-radius: 18px; border: 1px solid #eaeaea; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02);";
             
-            // ربط الضغطة على كارت الملف لفتح المعاينة
             card.onclick = () => this.openFilePreview(file.id);
 
             let previewHTML = `<i class="fa-solid fa-file" style="font-size: 3rem; color:#aaa;"></i>`;
@@ -191,7 +179,6 @@ class StorageEngineCore {
                 previewHTML = `<div style="width:100%; height:120px; background:#f8f9fa; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-video" style="font-size: 2.5rem; color:var(--accent-color, #007bff);"></i></div>`;
             }
 
-            // إضافة قلب أحمر صغير زاوية الكارت للتوضيح الفوري لو كان الملف مفضل
             let favBadgeHTML = file.isFavorite ? `<div class="fav-badge"><i class="fa-solid fa-heart"></i></div>` : '';
 
             card.innerHTML = `
@@ -205,5 +192,4 @@ class StorageEngineCore {
     }
 }
 
-// تصدير المحرك للنافذة العامة
 window.StorageEngine = new StorageEngineCore();
