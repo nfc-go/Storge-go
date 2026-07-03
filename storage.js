@@ -5,7 +5,7 @@
 class CloudStorageEngine {
     constructor() {
         // 🔐 رابط الـ Web App الأول (المسؤول عن الحسابات وباسوردات العملاء)
-        this.accountsApiUrl = "https://script.google.com/macros/s/AKfycbyz75D8Tv7D5bO6oT_IknalWjWCkpyaZWMzWqrDbmZx_qkjpuTtHmxAgHk3mJK3IKTs/exec";
+        this.accountsApiUrl = "https://script.google.com/macros/s/AKfycbyz75D8Tv7D5bO6oT_lknaIWjWCkpyaZWMzWqrDbmZx_qkjpuTtHmxAgHk3mJK3IKTs/exec";
         
         // 📂 رابط الـ Web App الثاني (المسؤول عن رفع وقراءة ملفات الـ Base64)
         this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3pyVi1EqyBXAUBFMKIznG0ckNM4rcFAtQJlTupZeQkhUBNM/exec";
@@ -85,7 +85,7 @@ class CloudStorageEngine {
                 alert("تم إنشاء حسابك بنجاح في جوجل شيت!");
                 window.location.reload();
             } else {
-                alert("حدث خطأ أثناء التفعيل، تأكد من صلاحيات الـ Web App.");
+                alert("حدث خطأ أثناء التفعيل، تأكد من صلاحيات الـ Web App والسطر الأول في الشيت.");
             }
         };
     }
@@ -158,7 +158,6 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
-    // 🌐 المايسترو: دالة الاتصال الموحدة لإرسال واستقبال البيانات من شيتات جوجل
     async callGoogleSheets(apiUrl, action, data = {}) {
         try {
             const res = await fetch(apiUrl, {
@@ -194,7 +193,6 @@ class CloudStorageEngine {
         const file = this.files.find(f => f.file_id === fileId);
         if (!file) return;
         this.activePreviewFileId = fileId;
-        const currentLang = document.documentElement.getAttribute("lang") || "en";
 
         document.getElementById("preview-modal-title").textContent = file.name;
         const body = document.getElementById("preview-modal-body");
