@@ -3,12 +3,11 @@
    ========================================================================== */
 
 class CloudStorageEngine {
-    constructor() {
-        // 🔐 رابط الـ Web App الأول (المسؤول عن الحسابات وباسوردات العملاء)
-        this.accountsApiUrl = "https://script.google.com/macros/s/AKfycbyz75D8Tv7D5bO6oT_lknaIWjWCkpyaZWMzWqrDbmZx_qkjpuTtHmxAgHk3mJK3IKTs/exec";
-        
-        // 📂 رابط الـ Web App الثاني (المسؤول عن رفع وقراءة ملفات الـ Base64)
-        this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3pyVi1EqyBXAUBFMKIznG0ckNM4rcFAtQJlTupZeQkhUBNM/exec";
+// 🔐 رابط الحسابات الصح 100%
+this.accountsApiUrl = "https://script.google.com/macros/s/AKfycbyz75D8Tv7D5bO6oT_IknalWjWCkpyaZWMzWqrDbmZx_qkjpuTtHmxAgHk3mJK3IKTs/exec";
+
+// 📂 رابط الملفات الصح 100%
+this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3pyVi1EqyBXAUBFMKIznG0ckNM4rcFAtQJlTupZeQkhUBNM/exec";
 
         this.cardId = this.getCardIdFromUrl();
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
