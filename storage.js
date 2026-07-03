@@ -1,18 +1,21 @@
 /* ==========================================================================
-   NFC GO - Cloud Storage Engine (Ultimate DB Overlord Fix)
+   NFC GO - Google Sheets Dual-Engine (Split Files & Accounts)
    ========================================================================== */
 
 class CloudStorageEngine {
     constructor() {
-        this.supabaseUrl = "https://wnjaqocmvvomlexnuhuh.supabase.co";
-        this.supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduamFxb2NtdnZvbWxleG51aHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDY1MDIsImV4cCI6MjA5ODUyMjUwMn0.IhNkg_LK1hKvBTOYtOZwL0ZGrA35nXsGPD2W9sHt0UI";
+        // 🔐 رابط الـ Web App الأول (المسؤول عن الحسابات وباسوردات العملاء)
+        this.accountsApiUrl = "https://script.google.com/macros/s/AKfycbyz75D8Tv7D5bO6oT_IknalWjWCkpyaZWMzWqrDbmZx_qkjpuTtHmxAgHk3mJK3IKTs/exec";
+        
+        // 📂 رابط الـ Web App الثاني (المسؤول عن رفع وقراءة ملفات الـ Base64)
+        this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3pyVi1EqyBXAUBFMKIznG0ckNM4rcFAtQJlTupZeQkhUBNM/exec";
 
         this.cardId = this.getCardIdFromUrl();
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
 
-        this.maxQuotaBytes = parseInt(localStorage.getItem(this.quotaBytesKey)) || (20 * 1024 * 1024 * 1024);
+        this.maxQuotaBytes = 20 * 1024 * 1024 * 1024; // 20 جيجا كوتا افتراضية
         this.files = [];
         this.activePreviewFileId = null;
 
@@ -21,30 +24,22 @@ class CloudStorageEngine {
 
     getCardIdFromUrl() {
         const hash = window.location.hash;
-        let cleanId = "";
         if (hash && hash.includes("#/") && hash !== "#/all" && hash !== "#/images" && hash !== "#/videos" && hash !== "#/favorites") {
-            cleanId = hash.replace("#/", "").split("?")[0].split("/")[0];
-            if (cleanId) {
-                localStorage.setItem("nfc_saved_card_id", cleanId);
-                return cleanId;
-            }
+            let cleanId = hash.replace("#/", "").split("?")[0].split("/")[0];
+            if (cleanId) { localStorage.setItem("nfc_saved_card_id", cleanId); return cleanId; }
         }
-        const savedId = localStorage.getItem("nfc_saved_card_id");
-        if (savedId) return savedId;
-        return "default_vault";
+        return localStorage.getItem("nfc_saved_card_id") || "default_vault";
     }
 
     async initCloudVault() {
         this.showCloudLoading(true);
         try {
-            const account = await this.cloudFetch('vault_accounts', `card_id=eq.${this.cardId}`);
-            
+            const account = await this.callGoogleSheets(this.accountsApiUrl, "fetch");
             if (!account || account.length === 0) {
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
             } else {
-                const isUnlocked = sessionStorage.getItem(this.authSessionKey);
-                if (isUnlocked === "true") {
+                if (sessionStorage.getItem(this.authSessionKey) === "true") {
                     await this.loadCloudFiles();
                 } else {
                     this.showCloudLoading(false);
@@ -52,7 +47,7 @@ class CloudStorageEngine {
                 }
             }
         } catch (err) {
-            console.error("[NFC GO] Init Error:", err);
+            console.error("Initialization error:", err);
             this.showCloudLoading(false);
             this.renderRegisterScreen();
         }
@@ -63,37 +58,34 @@ class CloudStorageEngine {
         const lockOverlay = document.createElement("div");
         lockOverlay.id = "nfc-auth-overlay";
         lockOverlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:#111116; z-index:99999; display:flex; justify-content:center; align-items:center; color:#fff; font-family:sans-serif; padding:20px; box-sizing:border-box;";
-        
         lockOverlay.innerHTML = `
             <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
-                <i class="fa-solid fa-database" style="font-size:3.5rem; color:#007bff; margin-bottom:15px;"></i>
-                <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO Cloud - إعداد الحساب</h2>
-                <p style="font-size:0.85rem; color:#aaa; margin-bottom:5px;">رقم الكارت: <span style="color:#007bff; font-weight:bold;">${this.cardId}</span></p>
+                <i class="fa-solid fa-file-excel" style="font-size:3.5rem; color:#28a745; margin-bottom:15px;"></i>
+                <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO - تفعيل الخزنة</h2>
+                <p style="font-size:0.85rem; color:#aaa; margin-bottom:15px;">رقم الكارت الحالي: <span style="color:#28a745; font-weight:bold;">${this.cardId}</span></p>
                 <form id="nfc-reg-form" onsubmit="return false;">
                     <input type="text" id="reg-username" placeholder="اسم المستخدم" required style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                    <input type="password" id="reg-password" placeholder="كلمة المرور السرية" required style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                    <button type="button" id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">إنشاء الحساب في الداتابيز</button>
+                    <input type="password" id="reg-password" placeholder="كلمة المرور" required style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                    <button type="button" id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">تفعيل الحساب سحابياً</button>
                 </form>
             </div>
         `;
         document.body.appendChild(lockOverlay);
 
-        document.getElementById("btn-save-account").onclick = async (e) => {
+        document.getElementById("btn-save-account").onclick = async () => {
             const user = document.getElementById("reg-username").value.trim();
             const pass = document.getElementById("reg-password").value.trim();
-            if(!user || !pass) { alert("برجاء ملء البيانات أولاً!"); return; }
+            if(!user || !pass) { alert("يرجى إدخال البيانات!"); return; }
 
             this.showCloudLoading(true);
-            const success = await this.cloudInsert('vault_accounts', { card_id: this.cardId, username: user, password: pass });
-            
+            const res = await this.callGoogleSheets(this.accountsApiUrl, "insert", { card_id: this.cardId, username: user, password: pass });
             this.showCloudLoading(false);
-            if(success) {
+            if(res && res.success) {
                 sessionStorage.setItem(this.authSessionKey, "true");
-                alert("تم الحفظ في الداتابيز بنجاح!");
-                lockOverlay.remove();
+                alert("تم إنشاء حسابك بنجاح في جوجل شيت!");
                 window.location.reload();
             } else {
-                alert("فشل الربط! السيرفر رفض تخزين البيانات، تأكد من كود الـ SQL Editor.");
+                alert("حدث خطأ أثناء التفعيل، تأكد من صلاحيات الـ Web App.");
             }
         };
     }
@@ -103,27 +95,23 @@ class CloudStorageEngine {
         const lockOverlay = document.createElement("div");
         lockOverlay.id = "nfc-auth-overlay";
         lockOverlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:#111116; z-index:99999; display:flex; justify-content:center; align-items:center; color:#fff; font-family:sans-serif; padding:20px; box-sizing:border-box;";
-        
         lockOverlay.innerHTML = `
             <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
                 <i class="fa-solid fa-lock" style="font-size:3.5rem; color:#dc3545; margin-bottom:15px;"></i>
-                <h2 style="margin:0 0 10px; font-size:1.4rem;">خزنة NFC GO - تسجيل دخول</h2>
-                <p style="font-size:0.85rem; color:#aaa; margin-bottom:20px;">مرحباً بك يا <span style="color:#28a745; font-weight:bold;">${username}</span>، اكتب الباسورد لفتح ملفاتك.</p>
-                <input type="password" id="login-password" placeholder="اكتب كلمة المرور هنا" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center; font-size:1.2rem; letter-spacing:2px;">
-                <button id="btn-unlock-vault" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">فتح الخزنة</button>
+                <h2 style="margin:0 0 10px; font-size:1.4rem;">خزنة NFC GO الآمنة</h2>
+                <p style="margin-bottom:20px;">مرحباً يا <span style="color:#28a745; font-weight:bold;">${username}</span></p>
+                <input type="password" id="login-password" placeholder="كلمة المرور" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center; font-size:1.2rem;">
+                <button id="btn-unlock-vault" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">فتح الملفات</button>
             </div>
         `;
         document.body.appendChild(lockOverlay);
 
         const checkUnlock = async () => {
-            const enteredPass = document.getElementById("login-password").value;
-            if (enteredPass === correctPassword) {
+            if (document.getElementById("login-password").value === String(correctPassword)) {
                 sessionStorage.setItem(this.authSessionKey, "true");
                 lockOverlay.remove();
                 await this.loadCloudFiles();
-            } else {
-                alert("الباسورد غير صحيح! حاول مجدداً.");
-            }
+            } else { alert("كلمة المرور خاطئة!"); }
         };
 
         document.getElementById("btn-unlock-vault").onclick = checkUnlock;
@@ -132,8 +120,8 @@ class CloudStorageEngine {
 
     async loadCloudFiles() {
         this.showCloudLoading(true);
-        const fetched = await this.cloudFetch('vault_files', `card_id=eq.${this.cardId}`);
-        this.files = fetched || [];
+        const fetchedData = await this.callGoogleSheets(this.filesApiUrl, "fetch");
+        this.files = fetchedData || [];
         this.updateQuotaUI();
         this.renderNodes("all");
         this.showCloudLoading(false);
@@ -145,17 +133,16 @@ class CloudStorageEngine {
             const reader = new FileReader();
             await new Promise((resolve) => {
                 reader.onload = async (e) => {
-                    const fileObj = {
+                    await this.callGoogleSheets(this.filesApiUrl, "insert", {
                         card_id: this.cardId,
-                        file_id: "node_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+                        file_id: "node_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
                         name: file.name,
                         size: file.size,
                         type: file.type,
-                        data_base64: e.target.result, 
-                        is_favorite: false, 
+                        data_base64: e.target.result,
+                        is_favorite: false,
                         date_added: new Date().toLocaleDateString()
-                    };
-                    await this.cloudInsert('vault_files', fileObj);
+                    });
                     resolve();
                 };
                 reader.readAsDataURL(file);
@@ -164,80 +151,31 @@ class CloudStorageEngine {
         await this.loadCloudFiles();
     }
 
-    async toggleFavoriteCloud(fileId, currentStatus) {
-        this.showCloudLoading(true);
-        await this.cloudUpdate('vault_files', { is_favorite: !currentStatus }, `and=(card_id.eq.${this.cardId},file_id.eq.${fileId})`);
-        await this.loadCloudFiles();
-        this.openFilePreview(fileId);
-    }
-
     async deleteFileCloud(fileId) {
         this.showCloudLoading(true);
-        await this.cloudDelete('vault_files', `and=(card_id.eq.${this.cardId},file_id.eq.${fileId})`);
+        await this.callGoogleSheets(this.filesApiUrl, "delete", { card_id: this.cardId, file_id: fileId });
         document.getElementById("media-preview-modal").classList.add("hidden-modal");
-        this.activePreviewFileId = null;
         await this.loadCloudFiles();
     }
 
-    /* 🔐 السحر هنا: الدالتين دول تم تظبيط الـ Headers والـ Payload فيهم إجبارياً للـ Supabase */
-    async cloudFetch(table, queryStr = "") {
+    // 🌐 المايسترو: دالة الاتصال الموحدة لإرسال واستقبال البيانات من شيتات جوجل
+    async callGoogleSheets(apiUrl, action, data = {}) {
         try {
-            const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-                method: "GET",
-                headers: { 
-                    "apikey": this.supabaseKey, 
-                    "Authorization": `Bearer ${this.supabaseKey}`,
-                    "Content-Type": "application/json"
-                }
-            });
-            return res.ok ? await res.json() : [];
-        } catch(e) { return []; }
-    }
-
-    async cloudInsert(table, dataObj) {
-        try {
-            const res = await fetch(`${this.supabaseUrl}/rest/v1/${table}`, {
+            const res = await fetch(apiUrl, {
                 method: "POST",
-                headers: { 
-                    "apikey": this.supabaseKey, 
-                    "Authorization": `Bearer ${this.supabaseKey}`, 
-                    "Content-Type": "application/json",
-                    "Prefer": "return=minimal"
-                },
-                body: JSON.stringify([dataObj]) // ⚠️ التعديل الجوهري: إرسال البيانات داخل مصفوفة [] لإجبار الـ API على القبول
+                mode: "cors",
+                body: JSON.stringify({ action: action, card_id: this.cardId, data: data, file_id: data.file_id || "" })
             });
-            return res.ok;
-        } catch(e) { return false; }
-    }
-
-    async cloudUpdate(table, dataObj, queryStr) {
-        try {
-            await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-                method: "PATCH",
-                headers: { 
-                    "apikey": this.supabaseKey, 
-                    "Authorization": `Bearer ${this.supabaseKey}`, 
-                    "Content-Type": "application/json" 
-                },
-                body: JSON.stringify(dataObj)
-            });
-        } catch(e) { console.error(e); }
-    }
-
-    async cloudDelete(table, queryStr) {
-        try {
-            await fetch(`${this.supabaseUrl}/rest/v1/${table}?${queryStr}`, {
-                method: "DELETE",
-                headers: { 
-                    "apikey": this.supabaseKey, 
-                    "Authorization": `Bearer ${this.supabaseKey}` 
-                }
-            });
-        } catch(e) { console.error(e); }
+            return await res.json();
+        } catch(e) { 
+            console.error("Fetch API error:", e);
+            return []; 
+        }
     }
 
     filter(category) { this.renderNodes(category); }
-    getUsedBytes() { return this.files.reduce((acc, f) => acc + f.size, 0); }
+    getUsedBytes() { return this.files.reduce((acc, f) => acc + parseInt(f.size || 0), 0); }
+    removeExistingOverlay() { const el = document.getElementById("nfc-auth-overlay"); if (el) el.remove(); }
 
     updateQuotaUI() {
         const usedBytes = this.getUsedBytes();
@@ -269,44 +207,7 @@ class CloudStorageEngine {
         } else {
             body.innerHTML = `<i class="fa-solid fa-file" style="font-size: 5rem; color:#fff;"></i>`;
         }
-
-        const favBtn = document.getElementById("action-fav-btn");
-        const favTxt = document.getElementById("txt-fav-btn");
-        if (file.is_favorite) {
-            favBtn.classList.add("is-active");
-            favTxt.textContent = currentLang === "ar" ? "إلغاء المفضلة" : "Remove Favorite";
-        } else {
-            favBtn.classList.remove("is-active");
-            favTxt.textContent = currentLang === "ar" ? "إضافة للمفضلة" : "Favorite";
-        }
         document.getElementById("media-preview-modal").classList.remove("hidden-modal");
-    }
-
-    bindModalActionButtons() {
-        document.getElementById("action-fav-btn").onclick = () => {
-            if (!this.activePreviewFileId) return;
-            const file = this.files.find(f => f.file_id === this.activePreviewFileId);
-            if (file) this.toggleFavoriteCloud(file.file_id, file.is_favorite);
-        };
-        document.getElementById("action-download-btn").onclick = () => {
-            if (!this.activePreviewFileId) return;
-            const file = this.files.find(f => f.file_id === this.activePreviewFileId);
-            if (file) {
-                const link = document.createElement("a");
-                link.href = file.data_base64;
-                link.download = file.name;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        };
-        document.getElementById("action-delete-btn").onclick = () => {
-            if (!this.activePreviewFileId) return;
-            const currentLang = document.documentElement.getAttribute("lang") || "en";
-            if (confirm(currentLang === "ar" ? "هل أنت متأكد من حذف هذا الملف سحابياً؟" : "Delete this file from cloud permanently?")) {
-                this.deleteFileCloud(this.activePreviewFileId);
-            }
-        };
     }
 
     renderNodes(category = "all") {
@@ -320,33 +221,30 @@ class CloudStorageEngine {
             filtered = this.files.filter(f => f.type.startsWith("image/"));
         } else if (category === "videos") {
             filtered = this.files.filter(f => f.type.startsWith("video/"));
-        } else if (category === "favorites") {
-            filtered = this.files.filter(f => f.is_favorite === true);
         }
 
         if (filtered.length === 0) {
-            matrix.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; opacity:0.5; font-weight:bold; color:var(--text-color);">${currentLang === "ar" ? "لا توجد ملفات سحابية." : "No cloud files."}</div>`;
+            matrix.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; opacity:0.5; font-weight:bold; color:var(--text-color);">${currentLang === "ar" ? "لا توجد ملفات مرفوعة." : "No files."}</div>`;
             return;
         }
 
         filtered.forEach(file => {
             const card = document.createElement("div");
             card.className = "file-card";
-            card.style = "background: var(--card-bg, #fff); padding:15px; border-radius:18px; border:1px solid #eaeaea; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.02);";
+            card.style = "background: var(--card-bg, #fff); padding:15px; border-radius:18px; border:1px solid #eaeaea; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.02); cursor:pointer;";
             card.onclick = () => this.openFilePreview(file.file_id);
 
             let previewHTML = `<i class="fa-solid fa-file" style="font-size:3rem; color:#aaa;"></i>`;
             if (file.type.startsWith("image/")) {
                 previewHTML = `<img src="${file.data_base64}" style="width:100%; height:120px; object-fit:contain; border-radius:12px; margin-bottom:10px;">`;
             } else if (file.type.startsWith("video/")) {
-                previewHTML = `<div style="width:100%; height:120px; background:#f8f9fa; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-video" style="font-size:2.5rem; color:var(--accent-color, #007bff);"></i></div>`;
+                previewHTML = `<div style="width:100%; height:120px; background:#f8f9fa; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-video" style="font-size:2.5rem; color:#007bff;"></i></div>`;
             }
 
             card.innerHTML = `
-                ${file.is_favorite ? `<div class="fav-badge"><i class="fa-solid fa-heart"></i></div>` : ''}
                 ${previewHTML}
                 <div style="font-weight:bold; font-size:0.9rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:8px; color:var(--text-color);">${file.name}</div>
-                <div style="font-size:0.8rem; opacity:0.6; margin-top:4px; color:var(--text-color);">${(file.size / 1024).toFixed(1)} KB</div>
+                <div style="font-size:0.8rem; opacity:0.6; margin-top:4px; color:var(--text-color);">${(parseInt(file.size)/1024).toFixed(1)} KB</div>
             `;
             matrix.appendChild(card);
         });
@@ -361,17 +259,12 @@ class CloudStorageEngine {
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري الاتصال بقاعدة البيانات...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري الاتصال السحابي بجوجل شيت...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
             }
         } else if (loader) { loader.remove(); }
-    }
-
-    removeExistingOverlay() {
-        const el = document.getElementById("nfc-auth-overlay");
-        if (el) el.remove();
     }
 }
 
