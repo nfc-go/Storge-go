@@ -1,20 +1,19 @@
 /* ==========================================================================
-   NFC GO - Google Sheets Dual-Engine (Split Files & Accounts)
+   NFC GO - SheetDB Cloud Engine (No Google Apps Script)
    ========================================================================== */
 
 class CloudStorageEngine {
-// 🔐 رابط الحسابات الصح 100%
-this.accountsApiUrl = "https://script.google.com/macros/s/AKfycbyz75D8Tv7D5bO6oT_IknalWjWCkpyaZWMzWqrDbmZx_qkjpuTtHmxAgHk3mJK3IKTs/exec";
-
-// 📂 رابط الملفات الصح 100%
-this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3pyVi1EqyBXAUBFMKIznG0ckNM4rcFAtQJlTupZeQkhUBNM/exec";
+    constructor() {
+        // 🔐 روابط الـ API الخاصة بك مباشرة من SheetDB
+        this.accountsApiUrl = "https://sheetdb.io/api/v1/uw9drgehwuzkc";
+        this.filesApiUrl = "https://sheetdb.io/api/v1/ji11y0pcd0mxx";
 
         this.cardId = this.getCardIdFromUrl();
         this.authSessionKey = `nfc_session_auth_${this.cardId}`;
         this.quotaLabelKey = `custom_quota_label_${this.cardId}`;
         this.quotaBytesKey = `custom_quota_bytes_${this.cardId}`;
 
-        this.maxQuotaBytes = 20 * 1024 * 1024 * 1024; // 20 جيجا كوتا افتراضية
+        this.maxQuotaBytes = 20 * 1024 * 1024 * 1024; 
         this.files = [];
         this.activePreviewFileId = null;
 
@@ -33,7 +32,9 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
     async initCloudVault() {
         this.showCloudLoading(true);
         try {
-            const account = await this.callGoogleSheets(this.accountsApiUrl, "fetch");
+            const res = await fetch(`${this.accountsApiUrl}/search?card_id=${this.cardId}`);
+            const account = await res.json();
+            
             if (!account || account.length === 0) {
                 this.showCloudLoading(false);
                 this.renderRegisterScreen();
@@ -46,7 +47,6 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
                 }
             }
         } catch (err) {
-            console.error("Initialization error:", err);
             this.showCloudLoading(false);
             this.renderRegisterScreen();
         }
@@ -59,14 +59,12 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
         lockOverlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:#111116; z-index:99999; display:flex; justify-content:center; align-items:center; color:#fff; font-family:sans-serif; padding:20px; box-sizing:border-box;";
         lockOverlay.innerHTML = `
             <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
-                <i class="fa-solid fa-file-excel" style="font-size:3.5rem; color:#28a745; margin-bottom:15px;"></i>
+                <i class="fa-solid fa-cloud" style="font-size:3.5rem; color:#007bff; margin-bottom:15px;"></i>
                 <h2 style="margin:0 0 10px; font-size:1.4rem;">NFC GO - تفعيل الخزنة</h2>
-                <p style="font-size:0.85rem; color:#aaa; margin-bottom:15px;">رقم الكارت الحالي: <span style="color:#28a745; font-weight:bold;">${this.cardId}</span></p>
-                <form id="nfc-reg-form" onsubmit="return false;">
-                    <input type="text" id="reg-username" placeholder="اسم المستخدم" required style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                    <input type="password" id="reg-password" placeholder="كلمة المرور" required style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
-                    <button type="button" id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">تفعيل الحساب سحابياً</button>
-                </form>
+                <p style="font-size:0.85rem; color:#aaa; margin-bottom:15px;">كارت رقم: ${this.cardId}</p>
+                <input type="text" id="reg-username" placeholder="اسم المستخدم" style="width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                <input type="password" id="reg-password" placeholder="كلمة المرور" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center;">
+                <button id="btn-save-account" style="width:100%; padding:12px; background:#28a745; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">تفعيل الحساب الآن</button>
             </div>
         `;
         document.body.appendChild(lockOverlay);
@@ -74,17 +72,20 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
         document.getElementById("btn-save-account").onclick = async () => {
             const user = document.getElementById("reg-username").value.trim();
             const pass = document.getElementById("reg-password").value.trim();
-            if(!user || !pass) { alert("يرجى إدخال البيانات!"); return; }
+            if(!user || !pass) return;
 
             this.showCloudLoading(true);
-            const res = await this.callGoogleSheets(this.accountsApiUrl, "insert", { card_id: this.cardId, username: user, password: pass });
+            const res = await fetch(this.accountsApiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: [{ card_id: this.cardId, username: user, password: pass }] })
+            });
             this.showCloudLoading(false);
-            if(res && res.success) {
+            if(res.ok) {
                 sessionStorage.setItem(this.authSessionKey, "true");
-                alert("تم إنشاء حسابك بنجاح في جوجل شيت!");
                 window.location.reload();
             } else {
-                alert("حدث خطأ أثناء التفعيل، تأكد من صلاحيات الـ Web App والسطر الأول في الشيت.");
+                alert("فشل التسجيل، يرجى مراجعة إعدادات شيت الحسابات والـ API.");
             }
         };
     }
@@ -98,31 +99,32 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
             <div style="background:#1f1f2e; padding:30px; border-radius:16px; width:100%; max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid #333;">
                 <i class="fa-solid fa-lock" style="font-size:3.5rem; color:#dc3545; margin-bottom:15px;"></i>
                 <h2 style="margin:0 0 10px; font-size:1.4rem;">خزنة NFC GO الآمنة</h2>
-                <p style="margin-bottom:20px;">مرحباً يا <span style="color:#28a745; font-weight:bold;">${username}</span></p>
+                <p>مرحباً يا <span style="color:#007bff; font-weight:bold;">${username}</span></p>
                 <input type="password" id="login-password" placeholder="كلمة المرور" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; text-align:center; font-size:1.2rem;">
                 <button id="btn-unlock-vault" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">فتح الملفات</button>
             </div>
         `;
         document.body.appendChild(lockOverlay);
 
-        const checkUnlock = async () => {
+        const checkUnlock = () => {
             if (document.getElementById("login-password").value === String(correctPassword)) {
                 sessionStorage.setItem(this.authSessionKey, "true");
                 lockOverlay.remove();
-                await this.loadCloudFiles();
+                this.loadCloudFiles();
             } else { alert("كلمة المرور خاطئة!"); }
         };
-
         document.getElementById("btn-unlock-vault").onclick = checkUnlock;
         document.getElementById("login-password").onkeydown = (e) => { if(e.key === "Enter") checkUnlock(); };
     }
 
     async loadCloudFiles() {
         this.showCloudLoading(true);
-        const fetchedData = await this.callGoogleSheets(this.filesApiUrl, "fetch");
-        this.files = fetchedData || [];
-        this.updateQuotaUI();
-        this.renderNodes("all");
+        try {
+            const res = await fetch(`${this.filesApiUrl}/search?card_id=${this.cardId}`);
+            this.files = await res.json() || [];
+            this.updateQuotaUI();
+            this.renderNodes("all");
+        } catch(e) { this.files = []; }
         this.showCloudLoading(false);
     }
 
@@ -132,15 +134,21 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
             const reader = new FileReader();
             await new Promise((resolve) => {
                 reader.onload = async (e) => {
-                    await this.callGoogleSheets(this.filesApiUrl, "insert", {
-                        card_id: this.cardId,
-                        file_id: "node_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        data_base64: e.target.result,
-                        is_favorite: false,
-                        date_added: new Date().toLocaleDateString()
+                    await fetch(this.filesApiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            data: [{
+                                card_id: this.cardId,
+                                file_id: "node_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                data_base64: e.target.result,
+                                is_favorite: "false",
+                                date_added: new Date().toLocaleDateString()
+                            }]
+                        })
                     });
                     resolve();
                 };
@@ -152,23 +160,9 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
 
     async deleteFileCloud(fileId) {
         this.showCloudLoading(true);
-        await this.callGoogleSheets(this.filesApiUrl, "delete", { card_id: this.cardId, file_id: fileId });
+        await fetch(`${this.filesApiUrl}/file_id/${fileId}`, { method: "DELETE" });
         document.getElementById("media-preview-modal").classList.add("hidden-modal");
         await this.loadCloudFiles();
-    }
-
-    async callGoogleSheets(apiUrl, action, data = {}) {
-        try {
-            const res = await fetch(apiUrl, {
-                method: "POST",
-                mode: "cors",
-                body: JSON.stringify({ action: action, card_id: this.cardId, data: data, file_id: data.file_id || "" })
-            });
-            return await res.json();
-        } catch(e) { 
-            console.error("Fetch API error:", e);
-            return []; 
-        }
     }
 
     filter(category) { this.renderNodes(category); }
@@ -256,7 +250,7 @@ this.filesApiUrl = "https://script.google.com/macros/s/AKfycbzOh3VgBkgT8x9epz8r3
                 loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;";
                 loader.innerHTML = `
                     <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
-                    <p style="font-weight:bold; font-size:1rem;">جاري الاتصال السحابي بجوجل شيت...</p>
+                    <p style="font-weight:bold; font-size:1rem;">جاري تحميل الخزنة السحابية عبر السيرفر الوسيط...</p>
                     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                 `;
                 document.body.appendChild(loader);
